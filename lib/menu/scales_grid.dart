@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:piano_app/common/app_sizes.dart';
 import 'package:piano_app/common/constants.dart';
 import 'package:piano_app/domain/key_signature_reference.dart';
+import 'package:piano_app/menu/scale_picker_bar.dart';
 
 typedef OnScaleSelected = void Function(int rootPc, String scaleType);
 typedef OnScaleCleared = void Function();
@@ -14,6 +15,10 @@ class ScalesGrid extends StatefulWidget {
   final KeySignatureReference? keySignature;
   final bool useFlats;
 
+  /// Compact lays the picker out as wrapping grids inside a bottom sheet; wide
+  /// lays it out as the two scrolling rows that sit above the keyboard.
+  final bool isCompact;
+
   const ScalesGrid({
     super.key,
     this.onScaleSelected,
@@ -22,6 +27,7 @@ class ScalesGrid extends StatefulWidget {
     this.initialScaleType = 'major',
     this.keySignature,
     this.useFlats = false,
+    this.isCompact = true,
   });
 
   @override
@@ -62,69 +68,74 @@ class _ScalesGridState extends State<ScalesGrid> {
         .toList();
     final scaleTypes = Constants.scaleDB.keys.toList();
 
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(AppSizes.radiusL),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          vertical: AppSizes.space8,
-          horizontal: AppSizes.space12,
-        ),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppSizes.space8.sbWidth,
-              Row(
-                children: [
-                  Spacer(),
-                  TextButton.icon(
-                    onPressed: _clearSelection,
-                    icon: const Icon(Icons.clear),
-                    label: const Text('Clear'),
-                  ),
-                ],
+    if (!widget.isCompact) {
+      return ScalePickerBar(
+        rootNames: rootNames,
+        types: [
+          for (final type in scaleTypes)
+            (value: type, label: _labelForScaleType(type)),
+        ],
+        selectedRootPc: _rootPc,
+        selectedType: _scaleType,
+        onRootSelected: _selectRoot,
+        onTypeSelected: _selectType,
+        onCleared: _clearSelection,
+      );
+    }
+
+    final titleStyle = Theme.of(context).textTheme.titleSmall;
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        vertical: AppSizes.space8,
+        horizontal: AppSizes.space12,
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: _clearSelection,
+                icon: const Icon(Icons.clear),
+                label: const Text('Clear'),
               ),
-              Text('Root', style: Theme.of(context).textTheme.titleSmall),
-              AppSizes.space8.sbHeight,
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: List.generate(rootNames.length, (index) {
-                  final selected = _rootPc == index;
-                  return ChoiceChip(
-                    label: Text(rootNames[index]),
-                    selected: selected,
-                    showCheckmark: false,
-                    onSelected: (_) => _selectRoot(index),
-                  );
-                }),
+            ),
+            Text('Root', style: titleStyle),
+            AppSizes.space8.sbHeight,
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: List.generate(
+                rootNames.length,
+                (index) => ChoiceChip(
+                  label: Text(rootNames[index]),
+                  selected: _rootPc == index,
+                  showCheckmark: false,
+                  onSelected: (_) => _selectRoot(index),
+                ),
               ),
-              AppSizes.space12.sbHeight,
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('Scale', style: Theme.of(context).textTheme.titleSmall),
-                ],
-              ),
-              AppSizes.space8.sbHeight,
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: scaleTypes.map((type) {
-                  final selected = _scaleType == type;
-                  return ChoiceChip(
-                    label: Text(_labelForScaleType(type)),
-                    selected: selected,
-                    showCheckmark: false,
-                    onSelected: (_) => _selectType(type),
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
+            ),
+            AppSizes.space12.sbHeight,
+            Text('Scale', style: titleStyle),
+            AppSizes.space8.sbHeight,
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: scaleTypes
+                  .map(
+                    (type) => ChoiceChip(
+                      label: Text(_labelForScaleType(type)),
+                      selected: _scaleType == type,
+                      showCheckmark: false,
+                      onSelected: (_) => _selectType(type),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
         ),
       ),
     );

@@ -1,0 +1,183 @@
+import 'package:flutter/material.dart';
+import 'package:piano_app/common/app_sizes.dart';
+
+/// A single labelled line of the persistent picker: a caption, a horizontally
+/// scrolling strip of [chips], and an optional [trailing] control pinned to the
+/// right (inversion stepper, clear button).
+class PickerRowLine extends StatelessWidget {
+  const PickerRowLine({
+    super.key,
+    required this.label,
+    required this.chips,
+    this.trailing,
+  });
+
+  final String label;
+  final List<Widget> chips;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        SizedBox(
+          width: 72,
+          child: Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              letterSpacing: 1.2,
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(vertical: AppSizes.space4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: AppSizes.space6,
+              children: chips,
+            ),
+          ),
+        ),
+        if (trailing != null) ...[
+          AppSizes.space8.sbWidth,
+          SizedBox(
+            height: 28,
+            child: VerticalDivider(
+              width: 1,
+              color: theme.colorScheme.outlineVariant,
+            ),
+          ),
+          AppSizes.space8.sbWidth,
+          trailing!,
+        ],
+      ],
+    );
+  }
+}
+
+/// Pill-shaped selectable chip used by the picker rows. The selected chip is
+/// filled with the primary color.
+class PickerChip extends StatelessWidget {
+  const PickerChip({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return Material(
+      color: selected ? colors.primary : colors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppSizes.radiusL),
+        side: BorderSide(
+          color: selected ? colors.primary : colors.outlineVariant,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minWidth: 44),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.space12,
+            vertical: AppSizes.space8,
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: selected ? colors.onPrimary : colors.onSurface,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Clear button pinned to the end of a picker row.
+class PickerClearButton extends StatelessWidget {
+  const PickerClearButton({super.key, required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton.icon(
+      onPressed: onPressed,
+      icon: const Icon(Icons.clear, size: 18),
+      label: const Text('Clear'),
+    );
+  }
+}
+
+/// Compact `− value +` stepper used for the chord inversion control.
+class PickerStepper extends StatelessWidget {
+  const PickerStepper({
+    super.key,
+    required this.label,
+    required this.value,
+    this.onDecrement,
+    this.onIncrement,
+  });
+
+  final String label;
+  final String value;
+  final VoidCallback? onDecrement;
+  final VoidCallback? onIncrement;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.labelSmall?.copyWith(
+            letterSpacing: 1.2,
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        IconButton(
+          onPressed: onDecrement,
+          icon: const Icon(Icons.remove),
+          iconSize: 18,
+          visualDensity: VisualDensity.compact,
+          padding: const EdgeInsets.all(AppSizes.space4),
+          constraints: const BoxConstraints(),
+        ),
+        SizedBox(
+          width: 44,
+          child: Text(
+            value,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.labelLarge,
+          ),
+        ),
+        IconButton(
+          onPressed: onIncrement,
+          icon: const Icon(Icons.add),
+          iconSize: 18,
+          visualDensity: VisualDensity.compact,
+          padding: const EdgeInsets.all(AppSizes.space4),
+          constraints: const BoxConstraints(),
+        ),
+      ],
+    );
+  }
+}
