@@ -3,6 +3,7 @@ import 'package:piano_app/common/app_sizes.dart';
 import 'package:piano_app/common/constants.dart';
 import 'package:piano_app/domain/key_signature_reference.dart';
 import 'package:piano_app/menu/scale_picker_bar.dart';
+import 'package:piano_app/common/logic/music_db.dart';
 
 typedef OnScaleSelected = void Function(int rootPc, String scaleType);
 typedef OnScaleCleared = void Function();
@@ -66,7 +67,7 @@ class _ScalesGridState extends State<ScalesGrid> {
           ),
         )
         .toList();
-    final scaleTypes = Constants.scaleDB.keys.toList();
+    final scaleTypes = MusicDb.scaleDB.keys.toList();
 
     if (!widget.isCompact) {
       return ScalePickerBar(

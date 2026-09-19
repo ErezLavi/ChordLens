@@ -1,6 +1,8 @@
 import 'package:piano/piano.dart';
 import 'package:piano_app/common/constants.dart';
+import 'package:piano_app/common/logic/voice_leading/voice_leading_cost.dart';
 import 'package:piano_app/domain/key_signature_reference.dart';
+import 'package:piano_app/common/logic/music_db.dart';
 
 class PianoUtils {
   const PianoUtils();
@@ -117,6 +119,19 @@ class PianoUtils {
     }
   }
 
+  /// Reads a [Voicing] off the keyboard. Returns null if nothing is sounding.
+  Voicing? voicingOf(Iterable<NotePosition> notes) {
+    final pitches = notes.map((n) => n.pitch).toSet().toList()..sort();
+    return pitches.isEmpty ? null : Voicing(pitches);
+  }
+
+  /// Turns a solved [Voicing] back into keyboard positions.
+  ///
+  /// Note the octave shift: [noteFromOffset] counts from C0 = 0, while
+  /// [NotePositionHelpers.pitch] is true MIDI (C4 = 60).
+  List<NotePosition> notesOf(Voicing voicing) =>
+      voicing.pitches.map((midi) => noteFromOffset(midi - 12)).toList();
+
   List<NotePosition> buildChordNotesForOctave({
     required int rootPc,
     required String chordType,
@@ -124,13 +139,15 @@ class PianoUtils {
     required int inversion,
     required NoteRange noteRange,
   }) {
-    final intervals = Constants.chordDB[chordType];
+    final intervals = MusicDb.chordDB[chordType];
     if (intervals == null) return [];
 
     final rootPitch = octave * 12 + rootPc;
     final orderedIntervals = _normalizeChordIntervals(chordType, intervals);
-    final invertedIntervals =
-        Constants.applyChordInversion(orderedIntervals, inversion);
+    final invertedIntervals = MusicDb.applyChordInversion(
+      orderedIntervals,
+      inversion,
+    );
     final selectedNotes = <NotePosition>[];
     final usedPitches = <int>{};
 
@@ -152,7 +169,7 @@ class PianoUtils {
     required int octave,
     required NoteRange noteRange,
   }) {
-    final intervals = Constants.scaleDB[scaleType];
+    final intervals = MusicDb.scaleDB[scaleType];
     if (intervals == null) return [];
 
     final rootPitch = octave * 12 + rootPc;
@@ -194,8 +211,7 @@ class PianoUtils {
         return interval + 12;
       }
       return interval;
-    }).toList()
-      ..sort();
+    }).toList()..sort();
 
     return normalized;
   }

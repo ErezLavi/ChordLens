@@ -1,6 +1,7 @@
 import 'package:piano_app/common/constants.dart';
 import 'package:piano/piano.dart';
 import 'package:piano_app/domain/key_signature_reference.dart';
+import 'package:piano_app/common/logic/music_db.dart';
 
 class DetectedChord {
   DetectedChord({required this.name, required this.root, required this.bass});
@@ -45,13 +46,13 @@ class ChordDetector {
       // HARD structural gate: must be a real chord
       //if (!_isStructurallyChord(playedIntervals)) continue;
 
-      for (final entry in Constants.chordDB.entries) {
+      for (final entry in MusicDb.chordDB.entries) {
         final chordType = entry.key;
         final template = entry.value;
 
         if (!_acceptableRoot(template, playedIntervals)) continue;
 
-        final required = Constants.chordRequiredIntervals[chordType];
+        final required = MusicDb.chordRequiredIntervals[chordType];
         if (required != null && !required.every(playedIntervals.contains)) {
           continue;
         }
@@ -83,8 +84,8 @@ class ChordDetector {
       if (b.root == bassPc && a.root != bassPc) return 1;
 
       // Commonality: Lower rank (more common) wins
-      final aRank = Constants.chordRank[a.type] ?? 9999;
-      final bRank = Constants.chordRank[b.type] ?? 9999;
+      final aRank = MusicDb.chordRank[a.type] ?? 9999;
+      final bRank = MusicDb.chordRank[b.type] ?? 9999;
       if (aRank != bRank) {
         return aRank.compareTo(bRank);
       }

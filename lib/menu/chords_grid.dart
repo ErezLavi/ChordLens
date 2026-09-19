@@ -3,6 +3,7 @@ import 'package:piano_app/common/app_sizes.dart';
 import 'package:piano_app/common/constants.dart';
 import 'package:piano_app/domain/key_signature_reference.dart';
 import 'package:piano_app/menu/chord_picker_bar.dart';
+import 'package:piano_app/common/logic/music_db.dart';
 
 typedef OnChordSelected =
     void Function(int rootPc, String chordType, int inversion);
@@ -75,8 +76,8 @@ class _ChordsGridState extends State<ChordsGrid> {
           ),
         )
         .toList();
-    final chordTypes = Constants.chordDB.keys
-        .where((type) => (Constants.chordRank[type] ?? 999) <= 27)
+    final chordTypes = MusicDb.chordDB.keys
+        .where((type) => (MusicDb.chordRank[type] ?? 999) <= 27)
         .toList();
     final maxInversion = _maxInversion();
 
@@ -201,7 +202,7 @@ class _ChordsGridState extends State<ChordsGrid> {
   }
 
   int _maxInversion() {
-    final maxFromType = Constants.maxChordInversion(_chordType);
+    final maxFromType = MusicDb.maxChordInversion(_chordType);
     return maxFromType.clamp(0, 3).toInt();
   }
 
