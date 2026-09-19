@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:piano_app/common/app_sizes.dart';
 import 'package:piano_app/common/constants.dart';
 import 'package:piano_app/domain/key_signature_reference.dart';
+import 'package:piano_app/menu/chord_picker_bar.dart';
 
 typedef OnChordSelected =
     void Function(int rootPc, String chordType, int inversion);
@@ -16,6 +17,10 @@ class ChordsGrid extends StatefulWidget {
   final KeySignatureReference? keySignature;
   final bool useFlats;
 
+  /// Compact lays the picker out as wrapping grids inside a bottom sheet; wide
+  /// lays it out as the two scrolling rows that sit above the keyboard.
+  final bool isCompact;
+
   const ChordsGrid({
     super.key,
     this.onChordSelected,
@@ -25,6 +30,7 @@ class ChordsGrid extends StatefulWidget {
     this.initialInversion = 0,
     this.keySignature,
     this.useFlats = false,
+    this.isCompact = true,
   });
 
   @override
@@ -74,86 +80,90 @@ class _ChordsGridState extends State<ChordsGrid> {
         .toList();
     final maxInversion = _maxInversion();
 
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(AppSizes.radiusL),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSizes.space12),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 400),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppSizes.space8.sbWidth,
-              Row(
-                children: [
-                  Spacer(),
-                  TextButton.icon(
-                    onPressed: _clearSelection,
-                    icon: const Icon(Icons.clear),
-                    label: const Text('Clear'),
-                  ),
-                ],
+    if (!widget.isCompact) {
+      return ChordPickerBar(
+        rootNames: rootNames,
+        types: [
+          for (final type in chordTypes)
+            (value: type, label: _labelForChordType(type)),
+        ],
+        selectedRootPc: _rootPc,
+        selectedType: _chordType,
+        inversion: _inversion,
+        maxInversion: maxInversion,
+        onRootSelected: _selectRoot,
+        onTypeSelected: _selectType,
+        onInversionSelected: _selectInversion,
+        onCleared: _clearSelection,
+      );
+    }
+
+    final titleStyle = Theme.of(context).textTheme.titleSmall;
+    return Padding(
+      padding: const EdgeInsets.all(AppSizes.space12),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: _clearSelection,
+                icon: const Icon(Icons.clear),
+                label: const Text('Clear'),
               ),
-              Text('Root', style: Theme.of(context).textTheme.titleSmall),
-              AppSizes.space8.sbHeight,
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: List.generate(rootNames.length, (index) {
-                  final selected = _rootPc == index;
-                  return ChoiceChip(
-                    label: Text(rootNames[index]),
-                    selected: selected,
-                    showCheckmark: false,
-                    onSelected: (_) => _selectRoot(index),
-                  );
-                }),
+            ),
+            Text('Root', style: titleStyle),
+            AppSizes.space8.sbHeight,
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: List.generate(
+                rootNames.length,
+                (index) => ChoiceChip(
+                  label: Text(rootNames[index]),
+                  selected: _rootPc == index,
+                  showCheckmark: false,
+                  onSelected: (_) => _selectRoot(index),
+                ),
               ),
-              AppSizes.space12.sbHeight,
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Quality',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                ],
+            ),
+            AppSizes.space12.sbHeight,
+            Text('Quality', style: titleStyle),
+            AppSizes.space8.sbHeight,
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: chordTypes
+                  .map(
+                    (type) => ChoiceChip(
+                      label: Text(_labelForChordType(type)),
+                      selected: _chordType == type,
+                      showCheckmark: false,
+                      onSelected: (_) => _selectType(type),
+                    ),
+                  )
+                  .toList(),
+            ),
+            AppSizes.space12.sbHeight,
+            Text('Inversion', style: titleStyle),
+            AppSizes.space8.sbHeight,
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: List.generate(
+                maxInversion + 1,
+                (index) => ChoiceChip(
+                  label: Text(index == 0 ? 'Root' : '$index'),
+                  selected: _inversion == index,
+                  showCheckmark: false,
+                  onSelected: (_) => _selectInversion(index),
+                ),
               ),
-              AppSizes.space8.sbHeight,
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: chordTypes.map((type) {
-                  final selected = _chordType == type;
-                  return ChoiceChip(
-                    label: Text(_labelForChordType(type)),
-                    selected: selected,
-                    showCheckmark: false,
-                    onSelected: (_) => _selectType(type),
-                  );
-                }).toList(),
-              ),
-              AppSizes.space12.sbHeight,
-              Text('Inversion', style: Theme.of(context).textTheme.titleSmall),
-              AppSizes.space8.sbHeight,
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: List.generate(maxInversion + 1, (index) {
-                  final label = index == 0 ? 'Root' : '$index';
-                  final selected = _inversion == index;
-                  return ChoiceChip(
-                    label: Text(label),
-                    selected: selected,
-                    showCheckmark: false,
-                    onSelected: (_) => _selectInversion(index),
-                  );
-                }),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

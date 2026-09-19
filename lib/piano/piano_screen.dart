@@ -7,7 +7,9 @@ import 'package:piano_app/piano/widgets/grand_stuff_viewer_widget.dart';
 import 'package:piano_app/piano/widgets/chord_viewer.dart';
 import 'package:piano_app/piano/widgets/octave_buttons_widget.dart';
 import 'package:piano_app/menu/adaptive_menu.dart';
+import 'package:piano_app/menu/chords_grid.dart';
 import 'package:piano_app/menu/key_signature_grid.dart';
+import 'package:piano_app/menu/scales_grid.dart';
 import 'package:piano_app/menu/top_bar.dart';
 
 class PianoScreen extends StatefulWidget {
@@ -47,6 +49,7 @@ class _PianoScreenState extends State<PianoScreen> {
       screenSize.width,
     );
     final verticalPadding = AppSizes.overlayVerticalPadding(screenSize.height);
+    final isCompact = AppSizes.isCompactSize(screenSize);
     return ListenableBuilder(
       listenable: _controller,
       builder: (context, _) => Scaffold(
@@ -78,6 +81,31 @@ class _PianoScreenState extends State<PianoScreen> {
                     ),
                   ),
                 ),
+                if (!isCompact && _controller.activePicker != null)
+                  Material(
+                    color: Theme.of(context).colorScheme.surfaceContainerLow,
+                    child: switch (_controller.activePicker!) {
+                      MenuPicker.chords => ChordsGrid(
+                        isCompact: false,
+                        onChordSelected: _controller.onChordSelected,
+                        onChordCleared: _controller.clearSelectedChord,
+                        initialRootPc: _controller.selectedChord.rootPc ?? 0,
+                        initialChordType: _controller.selectedChord.type,
+                        initialInversion: _controller.selectedChord.inversion,
+                        keySignature: _controller.selectedKeySignature,
+                        useFlats: _controller.useFlats,
+                      ),
+                      MenuPicker.scales => ScalesGrid(
+                        isCompact: false,
+                        onScaleSelected: _controller.onScaleSelected,
+                        onScaleCleared: _controller.clearSelectedScale,
+                        initialRootPc: _controller.selectedScale.rootPc ?? 0,
+                        initialScaleType: _controller.selectedScale.type,
+                        keySignature: _controller.selectedKeySignature,
+                        useFlats: _controller.useFlats,
+                      ),
+                    },
+                  ),
                 Expanded(
                   flex: 1,
                   child: KeyboardListener(

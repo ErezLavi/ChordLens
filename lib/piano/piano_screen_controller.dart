@@ -11,6 +11,10 @@ import 'package:piano_app/domain/sound_font_option.dart';
 import 'package:piano_app/domain/selected_chord.dart';
 import 'package:piano_app/domain/selected_scale.dart';
 
+/// Which picker the top bar has toggled on. On wide layouts the matching row
+/// sits permanently above the keyboard; `null` means neither is open.
+enum MenuPicker { chords, scales }
+
 class PianoScreenController extends ChangeNotifier {
   PianoScreenController();
 
@@ -38,6 +42,7 @@ class PianoScreenController extends ChangeNotifier {
   String currentChord = '';
   final SelectedChord _selectedChord = SelectedChord();
   final SelectedScale _selectedScale = SelectedScale();
+  MenuPicker? _activePicker;
 
   // Getters
   List<NotePosition> get pressedNotes => _pressedNotes.toList();
@@ -48,6 +53,7 @@ class PianoScreenController extends ChangeNotifier {
   SoundFontOption get selectedSoundFont => _soundFont;
   SelectedChord get selectedChord => _selectedChord;
   SelectedScale get selectedScale => _selectedScale;
+  MenuPicker? get activePicker => _activePicker;
   KeySignatureReference get selectedKeySignature => _selectedKeySignature;
   List<KeySignatureReference> get keySignatureReferences =>
       Constants.keySignatureReferences;
@@ -150,6 +156,11 @@ class PianoScreenController extends ChangeNotifier {
       _updateChord();
       notifyListeners();
     }
+  }
+
+  void togglePicker(MenuPicker picker) {
+    _activePicker = _activePicker == picker ? null : picker;
+    notifyListeners();
   }
 
   void onChordSelected(int rootPc, String chordType, int inversion) {
