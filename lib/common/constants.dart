@@ -17,7 +17,7 @@ class Constants {
   static const List<SoundFontOption> soundFonts = [rhodesSoundFont];
 
   // colors
-  static const Color playedNoteColor = Color(0xFF7F0881);
+  static const Color primaryColor = Color(0xFF7F0881);
   static const Color highlightedNoteColor = Color(0xFFE97F4A);
 
   static final Map<LogicalKeyboardKey, int> keyboardKeyOffsets = {

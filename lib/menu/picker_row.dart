@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:piano_app/common/app_sizes.dart';
+import 'package:piano_app/common/constants.dart';
 
 /// A single labelled line of the persistent picker: a caption, a horizontally
 /// scrolling strip of [chips], and an optional [trailing] control pinned to the
@@ -76,14 +77,12 @@ class PickerChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
     return Material(
-      color: selected ? colors.primary : colors.surface,
+      color: selected ? Constants.primaryColor : Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
         side: BorderSide(
-          color: selected ? colors.primary : colors.outlineVariant,
+          color: selected ? Constants.primaryColor : Colors.transparent,
         ),
       ),
       clipBehavior: Clip.antiAlias,
@@ -98,8 +97,8 @@ class PickerChip extends StatelessWidget {
           alignment: Alignment.center,
           child: Text(
             label,
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: selected ? colors.onPrimary : colors.onSurface,
+            style: TextStyle(
+              color: selected ? Colors.white : Colors.black,
             ),
           ),
         ),

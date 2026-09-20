@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:piano_app/common/app_sizes.dart';
+import 'package:piano_app/common/constants.dart';
 import 'package:piano_app/menu/adaptive_menu.dart';
 import 'package:piano_app/menu/chords_grid.dart';
 import 'package:piano_app/menu/scales_grid.dart';
@@ -240,15 +241,14 @@ class _PickerToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
     return TextButton.icon(
       onPressed: onPressed,
       icon: Icon(icon, size: iconSize),
       label: Text(label),
       style: TextButton.styleFrom(
-        foregroundColor: selected ? colors.primary : colors.onSurface,
+        foregroundColor: selected ? Constants.primaryColor : Colors.black,
         backgroundColor: selected
-            ? colors.primary.withValues(alpha: 0.12)
+            ? Constants.primaryColor.withValues(alpha: 0.12)
             : null,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSizes.radiusM),
