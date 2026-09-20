@@ -2,7 +2,6 @@
 // (Viterbi) offline, greedy live — both scored by one VoiceLeadingCost.
 
 import 'voice_leading_cost.dart';
-import 'voice_leading_types.dart';
 
 export 'voice_leading_types.dart';
 
