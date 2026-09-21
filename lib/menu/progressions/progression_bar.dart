@@ -124,7 +124,7 @@ class _VoiceLeadingSwitch extends StatelessWidget {
         Tooltip(
           message: 'Voice leading',
           child: Text(
-            'VL',
+            'VOICE LEADING',
             style: theme.textTheme.labelMedium?.copyWith(
               letterSpacing: 1.2,
               fontWeight: FontWeight.w600,
