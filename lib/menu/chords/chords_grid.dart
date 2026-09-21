@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:piano_app/common/app_sizes.dart';
 import 'package:piano_app/common/constants.dart';
 import 'package:piano_app/domain/key_signature_reference.dart';
-import 'package:piano_app/menu/chord_picker_bar.dart';
+import 'package:piano_app/menu/chords/chord_picker_bar.dart';
 import 'package:piano_app/common/logic/music_db.dart';
 
 typedef OnChordSelected =

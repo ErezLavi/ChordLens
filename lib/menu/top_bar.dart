@@ -3,8 +3,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:piano_app/common/app_sizes.dart';
 import 'package:piano_app/common/constants.dart';
 import 'package:piano_app/menu/adaptive_menu.dart';
-import 'package:piano_app/menu/chords_grid.dart';
-import 'package:piano_app/menu/scales_grid.dart';
+import 'package:piano_app/menu/chords/chords_grid.dart';
+import 'package:piano_app/menu/scales/scales_grid.dart';
 import 'package:piano_app/piano/piano_screen_controller.dart';
 
 class TopMenuBar extends StatelessWidget {
