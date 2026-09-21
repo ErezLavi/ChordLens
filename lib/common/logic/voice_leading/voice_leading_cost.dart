@@ -14,9 +14,12 @@ class VoiceLeadingCost {
   const VoiceLeadingCost({
     this.unmatchedPenalty = 2.0,
     this.bassWeight = 0.3,
-    this.registerWeight = 0.5,
-    this.targetCenter = 60.0,
-    this.mudPenalty = 2.0,
+    this.registerWeight = 0.30,
+    this.targetCenter = 65.0,
+    this.mudPenalty = 10.0,
+    this.spreadWeight = 1.0,
+    this.idealBassGap = 12,
+    this.idealUpperGap = 5,
   });
 
   /// Charged per upper note that has no partner, i.e. per note of size
@@ -33,11 +36,25 @@ class VoiceLeadingCost {
   final double registerWeight;
 
   /// The register the voices above the bass are held in, as a MIDI number
-  /// (60 = C4).
+  /// (65 = F4). This is the mean of the *upper* voices, so it sits above the
+  /// root a close-position chord is built on, not on it.
   final double targetCenter;
 
-  /// Charged per pair of adjacent notes crowded together low down.
+  /// Charged per semitone by which adjacent voices are crowded closer than
+  /// they can bear at their register.
   final double mudPenalty;
+
+  /// Charged per semitone by which a gap between adjacent voices exceeds the
+  /// ideal. Without it nothing prefers close position: the generator's gap
+  /// limits are hard bounds, so every spacing inside them scores the same.
+  final double spreadWeight;
+
+  /// Gap above the bass that costs nothing. Wider than [idealUpperGap]
+  /// because an open bass is normal, not a defect.
+  final int idealBassGap;
+
+  /// Gap between two adjacent upper voices that costs nothing.
+  final int idealUpperGap;
 
   /// What a voicing costs on its own terms, before any movement: where it
   /// sits, and how it is spaced.
@@ -47,7 +64,20 @@ class VoiceLeadingCost {
   /// smooth voice leading can pay for it.
   double staticCost(Voicing voicing) {
     final drift = voicing.upperCenter - targetCenter;
-    return registerWeight * drift * drift + mudPenalty * _mudCount(voicing);
+    return registerWeight * drift * drift +
+        mudPenalty * _crowdExcess(voicing) +
+        spreadWeight * _spreadExcess(voicing);
+  }
+
+  /// Total semitones by which the voicing is spaced wider than ideal.
+  int _spreadExcess(Voicing voicing) {
+    var excess = 0;
+    for (var i = 1; i < voicing.size; i++) {
+      final gap = voicing.pitches[i] - voicing.pitches[i - 1];
+      final ideal = i == 1 ? idealBassGap : idealUpperGap;
+      if (gap > ideal) excess += gap - ideal;
+    }
+    return excess;
   }
 
   /// Minimum-cost pairing between two voicings.
@@ -93,15 +123,19 @@ class VoiceLeadingCost {
     );
   }
 
-  /// Adjacent notes closer than a minor third, below middle C. Anywhere else
-  /// that spacing is a colour; down there it is mud.
-  int _mudCount(Voicing voicing) {
-    var count = 0;
+  /// Total semitones by which adjacent voices are crowded tighter than they
+  /// can bear. Below middle C that means anything under a minor third — down
+  /// there it is mud. Higher up a second is a colour, but a semitone between
+  /// adjacent voices still bites.
+  int _crowdExcess(Voicing voicing) {
+    var excess = 0;
     for (var i = 1; i < voicing.size; i++) {
       final lower = voicing.pitches[i - 1];
-      if (lower < 60 && voicing.pitches[i] - lower < 3) count++;
+      final gap = voicing.pitches[i] - lower;
+      final minimum = lower < 60 ? 3 : 2;
+      if (gap < minimum) excess += minimum - gap;
     }
-    return count;
+    return excess;
   }
 }
 

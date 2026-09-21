@@ -8,6 +8,7 @@ ChordSpec chord(int root, List<int> intervals, {int? voices}) =>
     ChordSpec(root: root, intervals: intervals, voices: voices);
 
 const majorTriad = [0, 4, 7];
+const minorTriad = [0, 3, 7];
 const minorSeventh = [0, 3, 7, 10];
 const dominantSeventh = [0, 4, 7, 10];
 const majorSeventh = [0, 4, 7, 11];
@@ -124,6 +125,34 @@ void main() {
           transition.maxUpperMotion,
           lessThanOrEqualTo(2),
           reason: 'upper voices should step, not leap: ${result.voicings}',
+        );
+      }
+    });
+
+    test('voices a lone triad in close position, not fanned out', () {
+      final result = leader.solve([chord(0, majorTriad)]);
+      final voicing = result.voicings.single;
+
+      expect(
+        voicing.top - voicing.bass,
+        lessThanOrEqualTo(12),
+        reason: 'a triad should fit in an octave: ${voicing.pitches}',
+      );
+    });
+
+    test('keeps every voicing of a progression inside two octaves', () {
+      final result = leader.solve([
+        chord(0, majorTriad),
+        chord(9, minorTriad),
+        chord(5, majorTriad),
+        chord(7, majorTriad),
+      ]);
+
+      for (final voicing in result.voicings) {
+        expect(
+          voicing.top - voicing.bass,
+          lessThanOrEqualTo(17),
+          reason: 'voicing is fanned out: ${voicing.pitches}',
         );
       }
     });
