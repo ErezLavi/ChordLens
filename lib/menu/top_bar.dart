@@ -4,6 +4,7 @@ import 'package:piano_app/common/app_sizes.dart';
 import 'package:piano_app/common/constants.dart';
 import 'package:piano_app/menu/adaptive_menu.dart';
 import 'package:piano_app/menu/chords/chords_grid.dart';
+import 'package:piano_app/menu/progressions/progressions_panel.dart';
 import 'package:piano_app/menu/scales/scales_grid.dart';
 import 'package:piano_app/piano/piano_screen_controller.dart';
 
@@ -73,6 +74,21 @@ class TopMenuBar extends StatelessWidget {
                   useFlats: controller.useFlats,
                 ),
               ),
+              AdaptiveMenu(
+                isCompact: true,
+                trigger: (context, open) => IconButton(
+                  onPressed: open,
+                  icon: const Icon(Icons.queue_music),
+                  tooltip: 'Progressions',
+                  iconSize: iconSize,
+                  padding: iconPadding,
+                ),
+                content: ListenableBuilder(
+                  listenable: controller,
+                  builder: (context, _) =>
+                      ProgressionsPanel(controller: controller, isCompact: true),
+                ),
+              ),
             ] else ...[
               // Wide layout: the pickers live permanently above the keyboard,
               // so these only toggle which row is showing.
@@ -89,6 +105,14 @@ class TopMenuBar extends StatelessWidget {
                 iconSize: iconSize,
                 selected: controller.activePicker == MenuPicker.scales,
                 onPressed: () => controller.togglePicker(MenuPicker.scales),
+              ),
+              _PickerToggle(
+                icon: Icons.queue_music,
+                label: 'Progressions',
+                iconSize: iconSize,
+                selected: controller.activePicker == MenuPicker.progressions,
+                onPressed: () =>
+                    controller.togglePicker(MenuPicker.progressions),
               ),
             ],
             MenuAnchor(

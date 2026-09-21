@@ -11,11 +11,13 @@ class PickerRowLine extends StatelessWidget {
     required this.label,
     required this.chips,
     this.trailing,
+    this.labelWidth = 72,
   });
 
   final String label;
   final List<Widget> chips;
   final Widget? trailing;
+  final double labelWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +25,7 @@ class PickerRowLine extends StatelessWidget {
     return Row(
       children: [
         SizedBox(
-          width: 72,
+          width: labelWidth,
           child: Text(
             label,
             style: theme.textTheme.labelSmall?.copyWith(
@@ -69,25 +71,36 @@ class PickerChip extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    this.onLongPress,
+    this.outlined = false,
+    this.ringed = false,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+  final bool outlined;
+  final bool ringed;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: selected ? Constants.primaryColor : Colors.transparent,
+    final chip = Material(
+      color: selected
+          ? Constants.primaryColor
+          : (outlined ? Colors.white : Colors.transparent),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
         side: BorderSide(
-          color: selected ? Constants.primaryColor : Colors.transparent,
+          color: selected
+              ? Constants.primaryColor
+              : (outlined ? Colors.black26 : Colors.transparent),
         ),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         child: Container(
           constraints: const BoxConstraints(minWidth: 44),
           padding: const EdgeInsets.symmetric(
@@ -103,6 +116,19 @@ class PickerChip extends StatelessWidget {
           ),
         ),
       ),
+    );
+
+    if (!ringed) return chip;
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.space4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppSizes.radiusL + AppSizes.space4),
+        border: Border.all(
+          color: Constants.primaryColor.withValues(alpha: 0.35),
+          width: 2,
+        ),
+      ),
+      child: chip,
     );
   }
 }

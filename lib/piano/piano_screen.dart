@@ -9,6 +9,7 @@ import 'package:piano_app/piano/widgets/octave_buttons_widget.dart';
 import 'package:piano_app/menu/adaptive_menu.dart';
 import 'package:piano_app/menu/chords/chords_grid.dart';
 import 'package:piano_app/menu/key_signature_grid.dart';
+import 'package:piano_app/menu/progressions/progressions_panel.dart';
 import 'package:piano_app/menu/scales/scales_grid.dart';
 import 'package:piano_app/menu/top_bar.dart';
 
@@ -103,6 +104,10 @@ class _PianoScreenState extends State<PianoScreen> {
                         initialScaleType: _controller.selectedScale.type,
                         keySignature: _controller.selectedKeySignature,
                         useFlats: _controller.useFlats,
+                      ),
+                      MenuPicker.progressions => ProgressionsPanel(
+                        controller: _controller,
+                        isCompact: false,
                       ),
                     },
                   ),

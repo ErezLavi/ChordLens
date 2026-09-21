@@ -8,12 +8,13 @@ import 'package:piano_app/common/midi_service.dart';
 import 'package:piano_app/common/piano_utils.dart';
 import 'package:piano_app/domain/key_signature_reference.dart';
 import 'package:piano_app/domain/sound_font_option.dart';
+import 'package:piano_app/domain/chord_progression.dart';
 import 'package:piano_app/domain/selected_chord.dart';
 import 'package:piano_app/domain/selected_scale.dart';
 
 /// Which picker the top bar has toggled on. On wide layouts the matching row
-/// sits permanently above the keyboard; `null` means neither is open.
-enum MenuPicker { chords, scales }
+/// sits permanently above the keyboard; `null` means none is open.
+enum MenuPicker { chords, scales, progressions }
 
 class PianoScreenController extends ChangeNotifier {
   PianoScreenController();
@@ -42,6 +43,7 @@ class PianoScreenController extends ChangeNotifier {
   String currentChord = '';
   final SelectedChord _selectedChord = SelectedChord();
   final SelectedScale _selectedScale = SelectedScale();
+  final ChordProgression _progression = ChordProgression();
   MenuPicker? _activePicker;
 
   // Getters
@@ -53,6 +55,7 @@ class PianoScreenController extends ChangeNotifier {
   SoundFontOption get selectedSoundFont => _soundFont;
   SelectedChord get selectedChord => _selectedChord;
   SelectedScale get selectedScale => _selectedScale;
+  ChordProgression get progression => _progression;
   MenuPicker? get activePicker => _activePicker;
   KeySignatureReference get selectedKeySignature => _selectedKeySignature;
   List<KeySignatureReference> get keySignatureReferences =>
@@ -160,10 +163,12 @@ class PianoScreenController extends ChangeNotifier {
 
   void togglePicker(MenuPicker picker) {
     _activePicker = _activePicker == picker ? null : picker;
+    if (_activePicker != MenuPicker.progressions) _progression.doneEditing();
     notifyListeners();
   }
 
   void onChordSelected(int rootPc, String chordType, int inversion) {
+    _progression.clearSelection();
     _selectedChord.rootPc = rootPc;
     _selectedChord.type = chordType;
     _selectedChord.inversion = inversion;
@@ -199,8 +204,80 @@ class PianoScreenController extends ChangeNotifier {
     notifyListeners();
   }
 
+  //*** Chord progression ***
+
+  void tapProgressionStep(int index) {
+    if (_progression.isEditing || _progression.selectedIndex == index) {
+      _progression.beginEdit(index);
+    } else {
+      _progression.select(index);
+    }
+    _applyProgressionSelection();
+  }
+
+  void editProgressionStep(int index) {
+    _progression.beginEdit(index);
+    _applyProgressionSelection();
+  }
+
+  void addProgressionStep() {
+    _progression.addStep();
+    _applyProgressionSelection();
+  }
+
+  void updateProgressionStep(int rootPc, String chordType, int inversion) {
+    _progression.updateEditing(
+      rootPc: rootPc,
+      type: chordType,
+      inversion: inversion,
+    );
+    _applyProgressionSelection();
+  }
+
+  void removeProgressionStep() {
+    _progression.removeEditing();
+    _applyProgressionSelection();
+  }
+
+  void finishProgressionEdit() {
+    _progression.doneEditing();
+    notifyListeners();
+  }
+
+  void setProgressionVoiceLeading(bool value) {
+    _progression.voiceLeadingEnabled = value;
+    _applyProgressionSelection();
+  }
+
+  void _applyProgressionSelection() {
+    final step = _progression.selectedStep;
+    if (step == null) {
+      _selectedChord.reset();
+      notifyListeners();
+      return;
+    }
+
+    final voicing = _progression.voiceLedVoicingAt(_progression.selectedIndex!);
+    _selectedChord
+      ..rootPc = step.rootPc
+      ..type = step.type
+      ..inversion = step.inversion
+      ..notes = voicing != null
+          ? _pianoTheory.notesOf(voicing)
+          : _pianoTheory.buildChordNotesForOctave(
+              rootPc: step.rootPc,
+              chordType: step.type,
+              octave: _keyboardOctave,
+              inversion: step.inversion,
+              noteRange: fullRange,
+            );
+    notifyListeners();
+  }
+
   void _rebuildSelectedHighlights() {
-    if (_selectedChord.rootPc != null) {
+    if (_progression.selectedStep != null) {
+      _applyProgressionSelection();
+    } else if (_selectedChord.rootPc != null) {
       _selectedChord.notes = _pianoTheory.buildChordNotesForOctave(
         rootPc: _selectedChord.rootPc!,
         chordType: _selectedChord.type,
