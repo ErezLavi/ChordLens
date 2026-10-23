@@ -1,4 +1,6 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:piano_app/common/app_sizes.dart';
 
 /// A single labelled line of the persistent picker: a caption, a horizontally
@@ -32,17 +34,7 @@ class PickerRowLine extends StatelessWidget {
             ),
           ),
         ),
-        Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(vertical: AppSizes.space4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              spacing: AppSizes.space6,
-              children: chips,
-            ),
-          ),
-        ),
+        Expanded(child: _ChipStrip(chips: chips)),
         if (trailing != null) ...[
           AppSizes.space8.sbWidth,
           SizedBox(
@@ -178,6 +170,73 @@ class PickerStepper extends StatelessWidget {
           constraints: const BoxConstraints(),
         ),
       ],
+    );
+  }
+}
+
+class _ChipStrip extends StatefulWidget {
+  const _ChipStrip({required this.chips});
+
+  final List<Widget> chips;
+
+  @override
+  State<_ChipStrip> createState() => _ChipStripState();
+}
+
+class _ChipStripState extends State<_ChipStrip> {
+  final ScrollController _controller = ScrollController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  bool get _axisFlipped => HardwareKeyboard.instance.logicalKeysPressed.any(
+    ScrollConfiguration.of(context).pointerAxisModifiers.contains,
+  );
+
+  void _handlePointerSignal(PointerSignalEvent event) {
+    if (event is! PointerScrollEvent) return;
+    if (event.scrollDelta.dx != 0 || event.scrollDelta.dy == 0) return;
+    if (_axisFlipped || _targetFor(event.scrollDelta.dy) == null) return;
+
+    GestureBinding.instance.pointerSignalResolver.register(event, (_) {
+      final target = _targetFor(event.scrollDelta.dy);
+      if (target != null) _controller.jumpTo(target);
+    });
+  }
+
+  double? _targetFor(double delta) {
+    if (!_controller.hasClients) return null;
+    final position = _controller.position;
+    final double target = (position.pixels + delta).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+    return target == position.pixels ? null : target;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final behavior = ScrollConfiguration.of(context);
+    return Listener(
+      onPointerSignal: _handlePointerSignal,
+      child: ScrollConfiguration(
+        behavior: behavior.copyWith(
+          dragDevices: {...behavior.dragDevices, PointerDeviceKind.mouse},
+        ),
+        child: SingleChildScrollView(
+          controller: _controller,
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(vertical: AppSizes.space4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: AppSizes.space6,
+            children: widget.chips,
+          ),
+        ),
+      ),
     );
   }
 }
