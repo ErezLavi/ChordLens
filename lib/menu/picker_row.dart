@@ -55,8 +55,7 @@ class PickerRowLine extends StatelessWidget {
   }
 }
 
-/// Pill-shaped selectable chip used by the picker rows. The selected chip is
-/// filled with the primary color.
+/// Pill-shaped selectable chip used by the picker rows.
 class PickerChip extends StatelessWidget {
   const PickerChip({
     super.key,
@@ -79,13 +78,13 @@ class PickerChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final chip = Material(
       color: selected
-          ? Constants.primaryColor
+          ? Constants.chromeColor
           : (outlined ? Colors.white : Colors.transparent),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
         side: BorderSide(
           color: selected
-              ? Constants.primaryColor
+              ? Constants.chromeColor
               : (outlined ? Colors.black26 : Colors.transparent),
         ),
       ),
@@ -116,7 +115,7 @@ class PickerChip extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppSizes.radiusL + AppSizes.space4),
         border: Border.all(
-          color: Constants.primaryColor.withValues(alpha: 0.35),
+          color: Constants.chromeColor.withValues(alpha: 0.35),
           width: 2,
         ),
       ),

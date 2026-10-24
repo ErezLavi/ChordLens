@@ -44,7 +44,7 @@ class ProgressionBar extends StatelessWidget {
         children: [
           const Icon(
             Icons.queue_music,
-            color: Constants.primaryColor,
+            color: Constants.chromeColor,
             size: AppSizes.space24,
           ),
           AppSizes.space12.sbWidth,
@@ -88,7 +88,7 @@ class ProgressionBar extends StatelessWidget {
               label: const Text('Done'),
               style: FilledButton.styleFrom(
                 shape: const StadiumBorder(),
-                backgroundColor: Constants.primaryColor,
+                backgroundColor: Constants.chromeColor,
               ),
             ),
           ] else
@@ -118,13 +118,13 @@ class _VoiceLeadingSwitch extends StatelessWidget {
           value: value,
           onChanged: onChanged,
           activeThumbColor: Colors.white,
-          activeTrackColor: Constants.primaryColor,
+          activeTrackColor: Constants.chromeColor,
         ),
         AppSizes.space6.sbWidth,
         Tooltip(
           message: 'Voice leading',
           child: Text(
-            'VOICE LEADING',
+            'SMOOTH TRANSITIONS',
             style: theme.textTheme.labelMedium?.copyWith(
               letterSpacing: 1.2,
               fontWeight: FontWeight.w600,
@@ -148,7 +148,7 @@ class _AddChordButton extends StatelessWidget {
       message: 'Add chord',
       child: CustomPaint(
         painter: _DashedCirclePainter(
-          color: Constants.primaryColor.withValues(alpha: 0.45),
+          color: Constants.chromeColor.withValues(alpha: 0.45),
         ),
         child: SizedBox.square(
           dimension: 40,
@@ -158,7 +158,7 @@ class _AddChordButton extends StatelessWidget {
             child: const Icon(
               Icons.add,
               size: 20,
-              color: Constants.primaryColor,
+              color: Constants.chromeColor,
             ),
           ),
         ),

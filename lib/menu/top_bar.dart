@@ -270,9 +270,9 @@ class _PickerToggle extends StatelessWidget {
       icon: Icon(icon, size: iconSize),
       label: Text(label),
       style: TextButton.styleFrom(
-        foregroundColor: selected ? Constants.primaryColor : Colors.black,
+        foregroundColor: selected ? Constants.chromeColor : Colors.black,
         backgroundColor: selected
-            ? Constants.primaryColor.withValues(alpha: 0.12)
+            ? Constants.chromeColor.withValues(alpha: 0.12)
             : null,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSizes.radiusM),
