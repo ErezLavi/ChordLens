@@ -4,7 +4,6 @@
 
 class MusicDb {
   static Map<String, Set<int>> chordDB = {
-    "5": {7},
     "": {4, 7},
     "m": {3, 7},
     "7": {4, 7, 10},
@@ -42,6 +41,7 @@ class MusicDb {
     "maj9#11": {4, 7, 11, 2, 6},
 
     // --- Additions ---
+    "5": {7},
     "add2": {2, 4, 7},
     "add4": {4, 7, 5},
     "add9": {4, 7, 2},
