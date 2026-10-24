@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:piano/piano.dart';
+import 'package:piano_app/domain/music_notation.dart';
 import 'package:piano_app/domain/key_signature_reference.dart';
 
 import 'custom_clef_painter.dart';
