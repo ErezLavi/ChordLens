@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:piano/piano.dart';
+import 'package:piano_app/domain/music_notation.dart';
 import 'package:piano_app/common/constants.dart';
 import 'package:piano_app/common/piano_utils.dart';
 

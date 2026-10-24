@@ -1,5 +1,5 @@
 import 'package:piano_app/common/constants.dart';
-import 'package:piano/piano.dart';
+import 'package:piano_app/domain/music_notation.dart';
 import 'package:piano_app/domain/key_signature_reference.dart';
 import 'package:piano_app/common/logic/music_db.dart';
 
