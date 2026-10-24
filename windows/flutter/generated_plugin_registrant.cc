@@ -8,6 +8,7 @@
 
 #include <device_manager/device_manager_plugin.h>
 #include <flutter_midi_pro/flutter_midi_pro_plugin_c_api.h>
+#include <metronome/metronome_plugin_c_api.h>
 #include <universal_ble/universal_ble_plugin_c_api.h>
 
 void RegisterPlugins(flutter::PluginRegistry* registry) {
@@ -15,6 +16,8 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("DeviceManagerPlugin"));
   FlutterMidiProPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FlutterMidiProPluginCApi"));
+  MetronomePluginCApiRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("MetronomePluginCApi"));
   UniversalBlePluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("UniversalBlePluginCApi"));
 }

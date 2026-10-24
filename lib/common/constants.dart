@@ -19,7 +19,6 @@ class Constants {
   // colors
   static const Color primaryColor = Color(0xFF7F0881);
   static const Color highlightedNoteColor = Color(0xFFE97F4A);
-
   static const Color chromeColor = Color(0xFF581C87);
 
   static final Map<LogicalKeyboardKey, int> keyboardKeyOffsets = {

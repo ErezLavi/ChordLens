@@ -9,6 +9,7 @@ import 'package:piano_app/common/piano_utils.dart';
 import 'package:piano_app/domain/key_signature_reference.dart';
 import 'package:piano_app/domain/sound_font_option.dart';
 import 'package:piano_app/domain/chord_progression.dart';
+import 'package:piano_app/domain/progression_player.dart';
 import 'package:piano_app/domain/selected_chord.dart';
 import 'package:piano_app/domain/selected_scale.dart';
 
@@ -44,6 +45,10 @@ class PianoScreenController extends ChangeNotifier {
   final SelectedChord _selectedChord = SelectedChord();
   final SelectedScale _selectedScale = SelectedScale();
   final ChordProgression _progression = ChordProgression();
+  late final ProgressionPlayer _progressionPlayer = ProgressionPlayer(
+    progression: _progression,
+    onStepChanged: _applyProgressionSelection,
+  );
   MenuPicker? _activePicker;
 
   // Getters
@@ -56,6 +61,7 @@ class PianoScreenController extends ChangeNotifier {
   SelectedChord get selectedChord => _selectedChord;
   SelectedScale get selectedScale => _selectedScale;
   ChordProgression get progression => _progression;
+  ProgressionPlayer get progressionPlayer => _progressionPlayer;
   MenuPicker? get activePicker => _activePicker;
   KeySignatureReference get selectedKeySignature => _selectedKeySignature;
   List<KeySignatureReference> get keySignatureReferences =>
@@ -162,7 +168,10 @@ class PianoScreenController extends ChangeNotifier {
 
   void togglePicker(MenuPicker picker) {
     _activePicker = _activePicker == picker ? null : picker;
-    if (_activePicker != MenuPicker.progressions) _progression.doneEditing();
+    if (_activePicker != MenuPicker.progressions) {
+      _progressionPlayer.pause();
+      _progression.doneEditing();
+    }
     notifyListeners();
   }
 
@@ -208,6 +217,7 @@ class PianoScreenController extends ChangeNotifier {
   //*** Chord progression ***
 
   void tapProgressionStep(int index) {
+    _progressionPlayer.pause();
     if (_progression.isEditing || _progression.selectedIndex == index) {
       _progression.beginEdit(index);
     } else {
@@ -217,11 +227,13 @@ class PianoScreenController extends ChangeNotifier {
   }
 
   void editProgressionStep(int index) {
+    _progressionPlayer.pause();
     _progression.beginEdit(index);
     _applyProgressionSelection();
   }
 
   void addProgressionStep() {
+    _progressionPlayer.pause();
     _progression.addStep();
     _applyProgressionSelection();
   }
@@ -237,7 +249,23 @@ class PianoScreenController extends ChangeNotifier {
 
   void removeProgressionStep() {
     _progression.removeEditing();
+    if (!_progressionPlayer.canPlay) _progressionPlayer.pause();
     _applyProgressionSelection();
+  }
+
+  void toggleProgressionPlayback() {
+    _progressionPlayer.toggle();
+    notifyListeners();
+  }
+
+  void nudgeProgressionBpm(int delta) {
+    _progressionPlayer.nudgeBpm(delta);
+    notifyListeners();
+  }
+
+  void toggleProgressionClick() {
+    _progressionPlayer.toggleClick();
+    notifyListeners();
   }
 
   void finishProgressionEdit() {
@@ -407,6 +435,7 @@ class PianoScreenController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _progressionPlayer.dispose();
     _midiService.dispose();
     focusNode.dispose();
     super.dispose();

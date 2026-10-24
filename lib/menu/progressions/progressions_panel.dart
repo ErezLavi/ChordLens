@@ -21,21 +21,7 @@ class ProgressionsPanel extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        ProgressionBar(
-          labels: progression.labels(
-            useFlats: controller.useFlats,
-            keySignature: controller.selectedKeySignature,
-          ),
-          selectedIndex: progression.selectedIndex,
-          editingIndex: progression.editingIndex,
-          voiceLeadingEnabled: progression.voiceLeadingEnabled,
-          onStepTapped: controller.tapProgressionStep,
-          onStepEditRequested: controller.editProgressionStep,
-          onStepAdded: controller.addProgressionStep,
-          onVoiceLeadingChanged: controller.setProgressionVoiceLeading,
-          onRemove: controller.removeProgressionStep,
-          onDone: controller.finishProgressionEdit,
-        ),
+        ProgressionBar(controller: controller, isCompact: isCompact),
         if (editingStep != null) ...[
           const Divider(height: 1),
           ChordsGrid(

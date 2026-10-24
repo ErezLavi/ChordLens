@@ -3,100 +3,269 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:piano_app/common/app_sizes.dart';
 import 'package:piano_app/common/constants.dart';
+import 'package:piano_app/domain/progression_player.dart';
 import 'package:piano_app/menu/picker_row.dart';
+import 'package:piano_app/piano/piano_screen_controller.dart';
 
 class ProgressionBar extends StatelessWidget {
   const ProgressionBar({
     super.key,
-    required this.labels,
-    required this.selectedIndex,
-    required this.editingIndex,
-    required this.voiceLeadingEnabled,
-    required this.onStepTapped,
-    required this.onStepEditRequested,
-    required this.onStepAdded,
-    required this.onVoiceLeadingChanged,
-    required this.onRemove,
-    required this.onDone,
+    required this.controller,
+    required this.isCompact,
   });
 
-  final List<String> labels;
-  final int? selectedIndex;
-  final int? editingIndex;
-  final bool voiceLeadingEnabled;
-  final ValueChanged<int> onStepTapped;
-  final ValueChanged<int> onStepEditRequested;
-  final VoidCallback onStepAdded;
-  final ValueChanged<bool> onVoiceLeadingChanged;
-  final VoidCallback onRemove;
-  final VoidCallback onDone;
-
-  bool get _isEditing => editingIndex != null;
+  final PianoScreenController controller;
+  final bool isCompact;
 
   @override
   Widget build(BuildContext context) {
+    final progression = controller.progression;
+    final labels = progression.labels(
+      useFlats: controller.useFlats,
+      keySignature: controller.selectedKeySignature,
+    );
+
+    final steps = SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(vertical: AppSizes.space4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: AppSizes.space8,
+        children: [
+          for (var index = 0; index < labels.length; index++)
+            PickerChip(
+              label: labels[index],
+              selected: progression.selectedIndex == index,
+              outlined: true,
+              ringed: progression.editingIndex == index,
+              onTap: () => controller.tapProgressionStep(index),
+              onLongPress: () => controller.editProgressionStep(index),
+            ),
+          _AddChordButton(onPressed: controller.addProgressionStep),
+        ],
+      ),
+    );
+
+    final player = controller.progressionPlayer;
+    final trailing = progression.isEditing
+        ? _EditingActions(
+            onRemove: controller.removeProgressionStep,
+            onDone: controller.finishProgressionEdit,
+          )
+        : _Transport(
+            isPlaying: player.isPlaying,
+            canPlay: player.canPlay,
+            clickEnabled: player.clickEnabled,
+            bpm: player.bpm,
+            voiceLeadingEnabled: progression.voiceLeadingEnabled,
+            onPlayPause: controller.toggleProgressionPlayback,
+            onClickToggled: controller.toggleProgressionClick,
+            onBpmNudged: controller.nudgeProgressionBpm,
+            onVoiceLeadingChanged: controller.setProgressionVoiceLeading,
+          );
+
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.space16,
         vertical: AppSizes.space8,
       ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.queue_music,
-            color: Constants.chromeColor,
-            size: AppSizes.space24,
+      child: isCompact
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              spacing: AppSizes.space8,
+              children: [
+                Row(
+                  children: [
+                    const _BarIcon(),
+                    AppSizes.space12.sbWidth,
+                    Expanded(child: steps),
+                  ],
+                ),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: trailing,
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                const _BarIcon(),
+                AppSizes.space12.sbWidth,
+                Expanded(child: steps),
+                AppSizes.space12.sbWidth,
+                trailing,
+              ],
+            ),
+    );
+  }
+}
+
+class _BarIcon extends StatelessWidget {
+  const _BarIcon();
+
+  @override
+  Widget build(BuildContext context) => const Icon(
+    Icons.queue_music,
+    color: Constants.chromeColor,
+    size: AppSizes.space24,
+  );
+}
+
+class _EditingActions extends StatelessWidget {
+  const _EditingActions({required this.onRemove, required this.onDone});
+
+  final VoidCallback onRemove;
+  final VoidCallback onDone;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: AppSizes.space8,
+      children: [
+        OutlinedButton.icon(
+          onPressed: onRemove,
+          icon: const Icon(Icons.delete_outline, size: 18),
+          label: const Text('Remove'),
+          style: OutlinedButton.styleFrom(
+            shape: const StadiumBorder(),
+            foregroundColor: Colors.black87,
           ),
-          AppSizes.space12.sbWidth,
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(vertical: AppSizes.space4),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                spacing: AppSizes.space8,
-                children: [
-                  for (var index = 0; index < labels.length; index++)
-                    PickerChip(
-                      label: labels[index],
-                      selected: selectedIndex == index,
-                      outlined: true,
-                      ringed: editingIndex == index,
-                      onTap: () => onStepTapped(index),
-                      onLongPress: () => onStepEditRequested(index),
+        ),
+        FilledButton.icon(
+          onPressed: onDone,
+          icon: const Icon(Icons.check, size: 18),
+          label: const Text('Done'),
+          style: FilledButton.styleFrom(
+            shape: const StadiumBorder(),
+            backgroundColor: Constants.chromeColor,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Play / pause, click mute and tempo for the looping playback, plus the
+/// voice-leading switch.
+class _Transport extends StatelessWidget {
+  const _Transport({
+    required this.isPlaying,
+    required this.canPlay,
+    required this.clickEnabled,
+    required this.bpm,
+    required this.voiceLeadingEnabled,
+    required this.onPlayPause,
+    required this.onClickToggled,
+    required this.onBpmNudged,
+    required this.onVoiceLeadingChanged,
+  });
+
+  final bool isPlaying;
+  final bool canPlay;
+  final bool clickEnabled;
+  final int bpm;
+  final bool voiceLeadingEnabled;
+  final VoidCallback onPlayPause;
+  final VoidCallback onClickToggled;
+  final ValueChanged<int> onBpmNudged;
+  final ValueChanged<bool> onVoiceLeadingChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: AppSizes.space8,
+      children: [
+        Tooltip(
+          message: isPlaying ? 'Pause' : 'Play progression',
+          child: IconButton.filled(
+            onPressed: canPlay ? onPlayPause : null,
+            icon: Icon(isPlaying ? Icons.stop : Icons.play_arrow),
+            style: IconButton.styleFrom(
+              backgroundColor: Constants.chromeColor,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ),
+        Tooltip(
+          message: clickEnabled ? 'Mute metronome' : 'Unmute metronome',
+          child: FilledButton.icon(
+            onPressed: onClickToggled,
+            icon: Icon(
+              clickEnabled ? Icons.timer_outlined : Icons.timer_off_outlined,
+              size: 18,
+            ),
+            label: const Text('Click'),
+            style: FilledButton.styleFrom(
+              shape: const StadiumBorder(),
+              backgroundColor: clickEnabled
+                  ? Constants.chromeColor
+                  : Colors.transparent,
+              foregroundColor: clickEnabled
+                  ? Colors.white
+                  : Constants.chromeColor,
+              side: clickEnabled
+                  ? null
+                  : BorderSide(
+                      color: Constants.chromeColor.withValues(alpha: 0.45),
                     ),
-                  _AddChordButton(onPressed: onStepAdded),
-                ],
-              ),
             ),
           ),
-          AppSizes.space12.sbWidth,
-          if (_isEditing) ...[
-            OutlinedButton.icon(
-              onPressed: onRemove,
-              icon: const Icon(Icons.delete_outline, size: 18),
-              label: const Text('Remove'),
-              style: OutlinedButton.styleFrom(
-                shape: const StadiumBorder(),
-                foregroundColor: Colors.black87,
+        ),
+        _BpmStepper(bpm: bpm, onNudged: onBpmNudged),
+        _VoiceLeadingSwitch(
+          value: voiceLeadingEnabled,
+          onChanged: onVoiceLeadingChanged,
+        ),
+      ],
+    );
+  }
+}
+
+class _BpmStepper extends StatelessWidget {
+  const _BpmStepper({required this.bpm, required this.onNudged});
+
+  final int bpm;
+  final ValueChanged<int> onNudged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: '$bpm BPM',
+      child: Container(
+        decoration: ShapeDecoration(
+          shape: StadiumBorder(
+            side: BorderSide(
+              color: Constants.chromeColor.withValues(alpha: 0.45),
+            ),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              onPressed: () => onNudged(-ProgressionPlayer.bpmStep),
+              icon: const Icon(Icons.remove, size: 18),
+              visualDensity: VisualDensity.compact,
+              color: Constants.chromeColor,
+            ),
+            SizedBox(
+              width: 32,
+              child: Text(
+                '$bpm',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.labelLarge,
               ),
             ),
-            AppSizes.space8.sbWidth,
-            FilledButton.icon(
-              onPressed: onDone,
-              icon: const Icon(Icons.check, size: 18),
-              label: const Text('Done'),
-              style: FilledButton.styleFrom(
-                shape: const StadiumBorder(),
-                backgroundColor: Constants.chromeColor,
-              ),
+            IconButton(
+              onPressed: () => onNudged(ProgressionPlayer.bpmStep),
+              icon: const Icon(Icons.add, size: 18),
+              visualDensity: VisualDensity.compact,
+              color: Constants.chromeColor,
             ),
-          ] else
-            _VoiceLeadingSwitch(
-              value: voiceLeadingEnabled,
-              onChanged: onVoiceLeadingChanged,
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -122,9 +291,9 @@ class _VoiceLeadingSwitch extends StatelessWidget {
         ),
         AppSizes.space6.sbWidth,
         Tooltip(
-          message: 'Voice leading',
+          message: 'Voice leading — smooth transitions',
           child: Text(
-            'SMOOTH TRANSITIONS',
+            'VL',
             style: theme.textTheme.labelMedium?.copyWith(
               letterSpacing: 1.2,
               fontWeight: FontWeight.w600,

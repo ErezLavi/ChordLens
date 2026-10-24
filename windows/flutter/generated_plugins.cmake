@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   device_manager
   flutter_midi_pro
+  metronome
   universal_ble
 )
 

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:piano/piano.dart';
 import 'package:piano_app/common/logic/voice_leading/voice_leader.dart';
+import 'package:piano_app/domain/music_notation.dart';
 import 'package:piano_app/common/piano_utils.dart';
 import 'package:piano_app/common/logic/voice_leading/voice_leading_cost.dart';
 

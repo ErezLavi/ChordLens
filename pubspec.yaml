@@ -43,6 +43,7 @@ dependencies:
   flutter_midi_command: ^0.5.4
   flutter_launcher_icons: ^0.14.2
   file_picker: ^10.3.10
+  metronome: ^2.0.13
 
 dev_dependencies:
   flutter_test:
@@ -67,3 +68,5 @@ flutter:
 
   assets:
     - assets/sf2/Rhodes.sf2
+    - assets/audio/click.wav
+    - assets/audio/click_accent.wav
