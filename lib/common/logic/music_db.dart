@@ -4,6 +4,7 @@
 
 class MusicDb {
   static Map<String, Set<int>> chordDB = {
+    "5": {7},
     "": {4, 7},
     "m": {3, 7},
     "7": {4, 7, 10},
@@ -11,16 +12,21 @@ class MusicDb {
     "m7": {3, 7, 10},
     "mMaj7": {3, 7, 11},
     "mMaj7#5": {3, 8, 11},
+    "m(maj9)": {3, 7, 11, 2},
     "sus2": {2, 7},
     "sus4": {5, 7},
     "dim": {3, 6},
     "dim7": {3, 6, 9},
+    "dimMaj7": {3, 6, 11},
     "aug": {4, 8},
+    "m7#5": {3, 8, 10},
 
     // Extensions:
     "9": {4, 7, 10, 2},
     "11": {4, 7, 10, 2, 5},
     "13": {4, 7, 10, 2, 5, 9},
+    "maj11": {4, 7, 11, 2, 5},
+    "maj13": {4, 7, 11, 2, 5, 9},
 
     // Altered
     "7b9": {4, 7, 10, 1},
@@ -28,6 +34,12 @@ class MusicDb {
     "7#11": {4, 7, 10, 6},
     "7b13": {4, 7, 10, 8},
     "7#5": {4, 8, 10},
+    "7b9b13": {4, 7, 10, 1, 8},
+    "7#9b13": {4, 7, 10, 3, 8},
+    "9#11": {4, 7, 10, 2, 6},
+    "13#11": {4, 7, 10, 2, 6, 9},
+    "maj7#11": {4, 7, 11, 6},
+    "maj9#11": {4, 7, 11, 2, 6},
 
     // --- Additions ---
     "add2": {2, 4, 7},
@@ -40,8 +52,11 @@ class MusicDb {
     "m11": {3, 7, 10, 2, 5},
     "m13": {3, 7, 10, 2, 5, 9},
     "m6": {3, 7, 9},
+    "m6/9": {3, 7, 9, 2},
     "m7b5": {3, 6, 10},
     "7sus4": {5, 7, 10},
+    "9sus4": {5, 7, 10, 2},
+    "13sus4": {5, 7, 10, 2, 9},
     "7b5": {4, 6, 10},
     "add#11": {4, 6, 7},
     "addb6": {4, 7, 8},
@@ -74,6 +89,8 @@ class MusicDb {
     "sus2": {2},
     "sus4": {5},
     "7sus4": {5},
+    "9sus4": {5},
+    "13sus4": {5},
     "maj7sus4": {5, 11},
 
     // Altered fifths
@@ -81,15 +98,34 @@ class MusicDb {
     "7#5": {8},
     "maj7#5": {8},
     "mMaj7#5": {8},
+    "m7#5": {8},
+
+    "dimMaj7": {6, 11},
 
     // Altered extensions
     "7b9": {1},
     "7#9": {3},
     "7#11": {6},
     "7b13": {8},
+    "7b9b13": {1, 8},
+    "7#9b13": {3, 8},
+    "9#11": {6},
+    "13#11": {6},
+    "maj7#11": {6, 11},
+    "maj9#11": {6, 11},
     "addb6": {8},
     "add#11": {6},
     "add2": {2},
+  };
+
+  static final Map<String, Set<int>> chordForbiddenIntervals = {
+    "5": {3, 4},
+    "sus2": {3, 4},
+    "sus4": {3, 4},
+    "7sus4": {3, 4},
+    "9sus4": {3, 4},
+    "13sus4": {3, 4},
+    "maj7sus4": {3, 4},
   };
 
   static const Map<String, int> chordRank = {
@@ -103,6 +139,7 @@ class MusicDb {
     "sus2": 6,
     "dim": 7,
     "aug": 8,
+    "5": 9,
 
     // 10-19: Standard Extensions & 6th Chords
     "maj9": 10,
@@ -122,7 +159,6 @@ class MusicDb {
     "add4": 23,
     "addb6": 24,
     "add#11": 25,
-    "m9(no7)": 26,
 
     // 30-39: Advanced/Altered (Complex tensions)
     "7sus4": 30,
@@ -142,7 +178,23 @@ class MusicDb {
     "13": 42,
     "m11": 43,
     "m13": 44,
+    "9sus4": 45,
+    "13sus4": 46,
+    "maj11": 47,
+    "maj13": 48,
+    "maj7#11": 49,
+    "maj9#11": 50,
+    "9#11": 51,
+    "13#11": 52,
+    "m(maj9)": 53,
+    "dimMaj7": 54,
+    "m7#5": 55,
+    "7b9b13": 56,
+    "7#9b13": 57,
   };
+
+  static bool isDetectableChord(String chordType) =>
+      (chordDB[chordType]?.length ?? 0) >= 2;
 
   static int maxChordInversion(String chordType) {
     final intervals = chordDB[chordType];

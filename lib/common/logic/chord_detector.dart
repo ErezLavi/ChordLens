@@ -50,6 +50,7 @@ class ChordDetector {
         final chordType = entry.key;
         final template = entry.value;
 
+        if (!MusicDb.isDetectableChord(chordType)) continue;
         if (!_acceptableRoot(template, playedIntervals)) continue;
 
         final required = MusicDb.chordRequiredIntervals[chordType];
@@ -57,14 +58,13 @@ class ChordDetector {
           continue;
         }
 
-        final missing = template.difference(playedIntervals).length;
-        if (missing > 1) continue;
-
-        final isSus = chordType.contains("sus");
-        if (isSus &&
-            (playedIntervals.contains(3) || playedIntervals.contains(4))) {
+        final forbidden = MusicDb.chordForbiddenIntervals[chordType];
+        if (forbidden != null && forbidden.any(playedIntervals.contains)) {
           continue;
         }
+
+        final missing = template.difference(playedIntervals).length;
+        if (missing > 1) continue;
 
         final score = _scoreChord(template, playedIntervals);
         candidates.add(Candidate(rootPc, chordType, score));
