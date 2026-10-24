@@ -62,12 +62,11 @@ class PianoScreenController extends ChangeNotifier {
       Constants.keySignatureReferences;
   List<SoundFontOption> get availableSoundFonts =>
       List.unmodifiable(_availableSoundFonts);
-  List<NotePosition> get combinedHighlightedNotes {
-    final combined = <NotePosition>{};
-    combined.addAll(_selectedChord.notes);
-    combined.addAll(_selectedScale.notes);
-    return combined.toList();
-  }
+  List<NotePosition> get activePickerNotes => switch (_activePicker) {
+    MenuPicker.chords || MenuPicker.progressions => _selectedChord.notes,
+    MenuPicker.scales => _selectedScale.notes,
+    null => const [],
+  };
 
   // Connected devices
   List<String> get connectedDeviceNames => _midiService.connectedDeviceNames;
@@ -168,6 +167,7 @@ class PianoScreenController extends ChangeNotifier {
   }
 
   void onChordSelected(int rootPc, String chordType, int inversion) {
+    _activePicker = MenuPicker.chords;
     _progression.clearSelection();
     _selectedChord.rootPc = rootPc;
     _selectedChord.type = chordType;
@@ -188,6 +188,7 @@ class PianoScreenController extends ChangeNotifier {
   }
 
   void onScaleSelected(int rootPc, String scaleType) {
+    _activePicker = MenuPicker.scales;
     _selectedScale.rootPc = rootPc;
     _selectedScale.type = scaleType;
     _selectedScale.notes = _pianoTheory.buildScaleNotesForOctave(
@@ -250,6 +251,7 @@ class PianoScreenController extends ChangeNotifier {
   }
 
   void _applyProgressionSelection() {
+    _activePicker = MenuPicker.progressions;
     final step = _progression.selectedStep;
     if (step == null) {
       _selectedChord.reset();

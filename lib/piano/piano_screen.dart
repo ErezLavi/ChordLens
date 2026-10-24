@@ -119,8 +119,7 @@ class _PianoScreenState extends State<PianoScreen> {
                     onKeyEvent: _controller.handleKeyboardKey,
                     child: CustomInteractivePiano(
                       highlightedNotes: _controller.pressedNotes,
-                      chordHighlightedNotes:
-                          _controller.combinedHighlightedNotes,
+                      chordHighlightedNotes: _controller.activePickerNotes,
                       naturalColor: Colors.white,
                       accidentalColor: Colors.black,
                       keyWidth: keyWidth,
