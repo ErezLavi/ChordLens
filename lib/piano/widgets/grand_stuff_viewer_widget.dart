@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:piano/piano.dart';
+import 'package:piano_app/domain/music_notation.dart';
 import 'package:piano_app/custom_piano/custom_clef_image.dart';
+import 'package:piano_app/custom_piano/custom_clef_painter.dart';
 import 'package:piano_app/domain/key_signature_reference.dart';
 
 class GrandStaffViewerWidget extends StatelessWidget {

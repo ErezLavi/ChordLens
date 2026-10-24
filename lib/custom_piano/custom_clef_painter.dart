@@ -4,9 +4,19 @@ import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:piano/piano.dart';
+import 'package:piano_app/domain/music_notation.dart';
 import 'package:piano_app/common/piano_utils.dart';
 import 'package:piano_app/domain/key_signature_reference.dart';
+
+/// A single note to be drawn on a staff, at a horizontal [offset] expressed as
+/// a fraction of the available width.
+class NoteImage {
+  final NotePosition notePosition;
+  final double offset;
+  final Color? color;
+
+  NoteImage({required this.notePosition, this.offset = 0.5, this.color});
+}
 
 class CustomClefPainter extends CustomPainter with EquatableMixin {
   final Clef clef;

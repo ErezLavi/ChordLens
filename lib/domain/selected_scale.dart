@@ -1,4 +1,4 @@
-import 'package:piano/piano.dart';
+import 'package:piano_app/domain/music_notation.dart';
 
 class SelectedScale {
   SelectedScale({

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:piano/piano.dart';
+import 'package:piano_app/domain/music_notation.dart';
 import 'package:piano_app/common/audio_service.dart';
 import 'package:piano_app/common/chord_detector.dart';
 import 'package:piano_app/common/constants.dart';
