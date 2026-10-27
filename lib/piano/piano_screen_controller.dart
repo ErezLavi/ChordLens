@@ -4,6 +4,7 @@ import 'package:piano_app/domain/music_notation.dart';
 import 'package:piano_app/common/audio_service.dart';
 import 'package:piano_app/common/logic/chord_detector.dart';
 import 'package:piano_app/common/constants.dart';
+import 'package:piano_app/common/metronome_service.dart';
 import 'package:piano_app/common/midi_service.dart';
 import 'package:piano_app/common/piano_utils.dart';
 import 'package:piano_app/domain/key_signature_reference.dart';
@@ -48,6 +49,7 @@ class PianoScreenController extends ChangeNotifier {
   late final ProgressionPlayer _progressionPlayer = ProgressionPlayer(
     progression: _progression,
     onStepChanged: _applyProgressionSelection,
+    metronome: MetronomeService(audio: _audioService),
   );
   MenuPicker? _activePicker;
 

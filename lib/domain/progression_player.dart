@@ -10,8 +10,8 @@ class ProgressionPlayer {
   ProgressionPlayer({
     required this.progression,
     required this.onStepChanged,
-    MetronomeService? metronome,
-  }) : _metronome = metronome ?? MetronomeService();
+    required MetronomeService metronome,
+  }) : _metronome = metronome;
 
   static const int minBpm = 40;
   static const int maxBpm = 240;
@@ -23,6 +23,7 @@ class ProgressionPlayer {
   final MetronomeService _metronome;
 
   bool _isPlaying = false;
+  bool _holdFirstBar = false;
   bool _clickEnabled = true;
   int _bpm = defaultBpm;
 
@@ -34,6 +35,9 @@ class ProgressionPlayer {
   void play() {
     if (_isPlaying || !canPlay) return;
     _isPlaying = true;
+    // The clock opens on a downbeat: a step already selected plays its full
+    // first bar, otherwise that downbeat selects the first step.
+    _holdFirstBar = progression.selectedIndex != null;
     progression.doneEditing();
     unawaited(
       _metronome.start(
@@ -71,6 +75,10 @@ class ProgressionPlayer {
 
   void _handleBeat(int beatInBar) {
     if (beatInBar != 0) return;
+    if (_holdFirstBar) {
+      _holdFirstBar = false;
+      return;
+    }
     progression.advance();
     onStepChanged();
   }

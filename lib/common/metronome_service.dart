@@ -1,94 +1,103 @@
 import 'dart:async';
 
-import 'package:flutter/services.dart';
+import 'package:piano_app/common/audio_service.dart';
 
-/// Drives the `metronome` plugin as the single clock for progression playback.
+/// The single clock for progression playback, kept in Dart.
 ///
-/// The click is muted by dropping the volume to zero rather than stopping the
-/// engine, so beats keep arriving while the sound is switched off.
-///
-/// Talks to the plugin's channels directly instead of its Dart facade. The
-/// native handlers never reply to the void methods, so every future the facade
-/// hands back hangs forever; the facade works around its own `init` that way
-/// too, which leaves no way to know the engine exists before calling `play`.
-/// Issuing the messages here keeps them in channel order — `init` is always
-/// posted before `play`, so the engine is built by the time it is told to run.
+/// Beats are scheduled against a [Stopwatch] rather than chained timer
+/// periods, so a late timer never pushes the beats after it. The click is a
+/// short, high note on the loaded soundfont, so it shares the piano's output
+/// and volume and needs no audio plugin of its own.
 class MetronomeService {
-  MetronomeService({AssetBundle? assets}) : _assets = assets ?? rootBundle;
+  MetronomeService({required AudioService audio}) : _audio = audio;
 
-  static const MethodChannel _channel = MethodChannel('metronome');
-  static const EventChannel _tickChannel = EventChannel('metronome_tick');
-
-  static const String clickAsset = 'assets/audio/click.wav';
-  static const String accentAsset = 'assets/audio/click_accent.wav';
   static const int beatsPerBar = 4;
-  static const int sampleRate = 44100;
-  static const int clickVolume = 70;
+  static const int accentKey = 96;
+  static const int beatKey = 91;
+  static const int accentVelocity = 110;
+  static const int beatVelocity = 80;
+  static const Duration clickLength = Duration(milliseconds: 60);
 
-  final AssetBundle _assets;
-  StreamSubscription<dynamic>? _tickSubscription;
-  bool _initialized = false;
+  final AudioService _audio;
+  final Stopwatch _clock = Stopwatch();
+  Timer? _beatTimer;
+  void Function(int beatInBar)? _onBeat;
+  bool _clickAudible = true;
+  int _bpm = 120;
+  int _beatInBar = 0;
+  Duration _nextBeatAt = Duration.zero;
+
+  Duration get _beatLength =>
+      Duration(microseconds: Duration.microsecondsPerMinute ~/ _bpm);
 
   /// [onBeat] receives the beat's index within the bar, counting from zero on
-  /// the accented downbeat.
+  /// the accented downbeat. The first downbeat sounds immediately.
   Future<void> start({
     required int bpm,
     required bool clickAudible,
     required void Function(int beatInBar) onBeat,
   }) async {
-    await _ensureInitialized(bpm: bpm, clickAudible: clickAudible);
-    _tickSubscription ??= _tickChannel.receiveBroadcastStream().listen((event) {
-      if (event is int) onBeat(event);
-    });
-    _send('setBPM', {'bpm': bpm});
-    _send('setVolume', {'volume': _volumeOf(clickAudible)});
-    _send('play');
+    _beatTimer?.cancel();
+    _bpm = bpm;
+    _clickAudible = clickAudible;
+    _onBeat = onBeat;
+    _beatInBar = 0;
+    _nextBeatAt = Duration.zero;
+    _clock
+      ..reset()
+      ..start();
+    _tick();
   }
 
   Future<void> stop() async {
-    await _tickSubscription?.cancel();
-    _tickSubscription = null;
-    if (_initialized) _send('stop');
+    _beatTimer?.cancel();
+    _beatTimer = null;
+    _clock.stop();
+    _onBeat = null;
   }
 
+  /// Keeps the beat already counting down where it was and stretches or
+  /// shrinks only the wait for it, so a tempo change lands on the next beat.
   Future<void> setBpm(int bpm) async {
-    if (_initialized) _send('setBPM', {'bpm': bpm});
+    if (bpm == _bpm) return;
+    final previous = _beatLength;
+    _bpm = bpm;
+    if (_beatTimer == null) return;
+    _nextBeatAt += _beatLength - previous;
+    _scheduleNextBeat();
   }
 
-  Future<void> setClickAudible(bool audible) async {
-    if (_initialized) _send('setVolume', {'volume': _volumeOf(audible)});
+  Future<void> setClickAudible(bool audible) async => _clickAudible = audible;
+
+  void _tick() {
+    final now = _clock.elapsed;
+    // After a stall longer than a beat, pick up from now instead of firing
+    // the missed beats back to back.
+    if (now - _nextBeatAt > _beatLength) _nextBeatAt = now;
+
+    final beat = _beatInBar;
+    _beatInBar = (_beatInBar + 1) % beatsPerBar;
+    _nextBeatAt += _beatLength;
+    _scheduleNextBeat();
+
+    if (_clickAudible) _click(accented: beat == 0);
+    _onBeat?.call(beat);
   }
 
-  Future<void> _ensureInitialized({
-    required int bpm,
-    required bool clickAudible,
-  }) async {
-    if (_initialized) return;
-    final main = await _assets.load(clickAsset);
-    final accented = await _assets.load(accentAsset);
-    _send('init', {
-      'mainFileBytes': main.buffer.asUint8List(),
-      'accentedFileBytes': accented.buffer.asUint8List(),
-      'bpm': bpm,
-      'volume': _volumeOf(clickAudible),
-      'enableTickCallback': true,
-      'timeSignature': beatsPerBar,
-      'sampleRate': sampleRate,
-      'manageAudioSession': true,
-    });
-    _initialized = true;
+  void _scheduleNextBeat() {
+    _beatTimer?.cancel();
+    final wait = _nextBeatAt - _clock.elapsed;
+    _beatTimer = Timer(wait.isNegative ? Duration.zero : wait, _tick);
   }
 
-  double _volumeOf(bool audible) => audible ? clickVolume / 100 : 0;
-
-  void _send(String method, [Map<String, Object?>? arguments]) {
-    unawaited(_channel.invokeMethod<void>(method, arguments));
+  void _click({required bool accented}) {
+    final key = accented ? accentKey : beatKey;
+    _audio.playNote(
+      key: key,
+      velocity: accented ? accentVelocity : beatVelocity,
+    );
+    Timer(clickLength, () => _audio.stopNote(key: key));
   }
 
-  Future<void> dispose() async {
-    await stop();
-    if (!_initialized) return;
-    _initialized = false;
-    _send('destroy');
-  }
+  Future<void> dispose() => stop();
 }
