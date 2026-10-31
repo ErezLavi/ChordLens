@@ -24,6 +24,7 @@ Website: **https://erezlavi.github.io/ChordLens/**
 - Chord detection with a chord name display
 - Grand staff view of currently pressed notes
 - Chord and scales highlighting from the top-right menu
+- Chord progressions with playback, metronome click, adjustable BPM and voice leading
 - Hardware MIDI input support (auto-connects to the first available device) / Playing from the computer's keyboard
 - SoundFont playback via SF2 assets / uploaded custom SF2 files + mute mode
 
@@ -35,15 +36,28 @@ Website: **https://erezlavi.github.io/ChordLens/**
 | --- | --- |
 | ![Chords](assets/showcase/chords.png) | ![Scales](assets/showcase/scales.png) |
 
-| Menu |
+| Progressions |
 | --- |
-| ![Menu](assets/showcase/menu.png) |
+| ![Progressions](assets/showcase/progressions.png) |
+
+| Mobile | Menu |
+| --- | --- |
+| ![Mobile](assets/showcase/mobile.png) | ![Menu](assets/showcase/menu.png) |
 
 ## Controls
 
 - Computer keyboard mapping:
   - `Z S X D C V G B H N J M , L . ; /`
   - `[` and `]` to shift the keyboard octave
+
+## Chord Progressions
+
+Open **Progressions** from the top-right menu to build and play a sequence of chords.
+
+- Tap `+` to add a chord, tap a chord to select it, and tap it again (or long-press) to change or remove it
+- Press play to loop the progression, one chord per bar (needs at least 2 chords), with an optional metronome **Click**
+- Adjust the tempo with `-` / `+` (40–240 BPM)
+- Turn on **VL** (voice leading) for smooth transitions between chords
 
 ## SoundFonts
 
