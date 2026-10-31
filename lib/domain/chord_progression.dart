@@ -42,10 +42,15 @@ class ChordProgression {
     _selectedIndex = index;
   }
 
-  void advance() {
+  void advance() => move(1);
+
+  void move(int delta) {
     if (_steps.isEmpty) return;
     final current = _selectedIndex;
-    select(current == null ? 0 : (current + 1) % _steps.length);
+    final next = current == null
+        ? (delta > 0 ? 0 : _steps.length - 1)
+        : (current + delta) % _steps.length;
+    isEditing ? beginEdit(next) : select(next);
   }
 
   void clearSelection() {

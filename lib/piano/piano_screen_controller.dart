@@ -125,15 +125,17 @@ class PianoScreenController extends ChangeNotifier {
     return (chord.substring(0, rootLen), chord.substring(rootLen));
   }
 
-  void handleKeyboardKey(KeyEvent event) {
+  KeyEventResult handleKeyboardKey(KeyEvent event) {
     var updated = false;
     if (event is KeyDownEvent) {
-      if (event.logicalKey == LogicalKeyboardKey.bracketLeft) {
+      if (_handleProgressionKey(event.logicalKey)) {
+        return KeyEventResult.handled;
+      } else if (event.logicalKey == LogicalKeyboardKey.bracketLeft) {
         decrementOctave();
-        return;
+        return KeyEventResult.handled;
       } else if (event.logicalKey == LogicalKeyboardKey.bracketRight) {
         incrementOctave();
-        return;
+        return KeyEventResult.handled;
       } else {
         final offset = Constants.keyboardKeyOffsets[event.logicalKey];
         if (offset != null && !_activeKeyNotes.containsKey(event.logicalKey)) {
@@ -166,6 +168,21 @@ class PianoScreenController extends ChangeNotifier {
       _updateChord();
       notifyListeners();
     }
+    return KeyEventResult.ignored;
+  }
+
+  bool _handleProgressionKey(LogicalKeyboardKey key) {
+    if (_activePicker != MenuPicker.progressions) return false;
+    if (key == LogicalKeyboardKey.arrowRight) {
+      moveProgressionSelection(1);
+    } else if (key == LogicalKeyboardKey.arrowLeft) {
+      moveProgressionSelection(-1);
+    } else if (key == LogicalKeyboardKey.space) {
+      toggleProgressionPlayback();
+    } else {
+      return false;
+    }
+    return true;
   }
 
   void togglePicker(MenuPicker picker) {
@@ -231,6 +248,12 @@ class PianoScreenController extends ChangeNotifier {
   void editProgressionStep(int index) {
     _progressionPlayer.pause();
     _progression.beginEdit(index);
+    _applyProgressionSelection();
+  }
+
+  void moveProgressionSelection(int delta) {
+    _progressionPlayer.pause();
+    _progression.move(delta);
     _applyProgressionSelection();
   }
 

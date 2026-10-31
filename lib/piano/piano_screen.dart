@@ -113,10 +113,11 @@ class _PianoScreenState extends State<PianoScreen> {
                   ),
                 Expanded(
                   flex: 1,
-                  child: KeyboardListener(
+                  child: Focus(
                     focusNode: _controller.focusNode,
                     autofocus: true,
-                    onKeyEvent: _controller.handleKeyboardKey,
+                    onKeyEvent: (_, event) =>
+                        _controller.handleKeyboardKey(event),
                     child: CustomInteractivePiano(
                       highlightedNotes: _controller.pressedNotes,
                       chordHighlightedNotes: _controller.activePickerNotes,
