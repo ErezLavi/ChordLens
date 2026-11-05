@@ -47,10 +47,13 @@ class PianoScreenController extends ChangeNotifier {
   final SelectedChord _selectedChord = SelectedChord();
   final SelectedScale _selectedScale = SelectedScale();
   final ChordProgression _progression = ChordProgression();
+  late final MetronomeService _metronome = MetronomeService(
+    audio: _audioService,
+  );
   late final ProgressionPlayer _progressionPlayer = ProgressionPlayer(
     progression: _progression,
     onStepChanged: _applyProgressionSelection,
-    metronome: MetronomeService(audio: _audioService),
+    metronome: _metronome,
   );
   MenuPicker? _activePicker;
 
@@ -65,6 +68,7 @@ class PianoScreenController extends ChangeNotifier {
   SelectedScale get selectedScale => _selectedScale;
   ChordProgression get progression => _progression;
   ProgressionPlayer get progressionPlayer => _progressionPlayer;
+  MetronomeService get metronome => _metronome;
   MenuPicker? get activePicker => _activePicker;
   KeySignatureReference get selectedKeySignature => _selectedKeySignature;
   List<KeySignatureReference> get keySignatureReferences =>
@@ -78,8 +82,9 @@ class PianoScreenController extends ChangeNotifier {
   };
 
   bool get showsOctaveControls =>
-      activePickerNotes.isNotEmpty || 
-      (defaultTargetPlatform != TargetPlatform.android && connectedDeviceNames.isEmpty);
+      activePickerNotes.isNotEmpty ||
+      (defaultTargetPlatform != TargetPlatform.android &&
+          connectedDeviceNames.isEmpty);
 
   // Connected devices
   List<String> get connectedDeviceNames => _midiService.connectedDeviceNames;
@@ -134,6 +139,9 @@ class PianoScreenController extends ChangeNotifier {
     var updated = false;
     if (event is KeyDownEvent) {
       if (_handleProgressionKey(event.logicalKey)) {
+        return KeyEventResult.handled;
+      } else if (event.logicalKey == LogicalKeyboardKey.space) {
+        toggleMetronome();
         return KeyEventResult.handled;
       } else if (event.logicalKey == LogicalKeyboardKey.bracketLeft) {
         decrementOctave();
@@ -288,16 +296,6 @@ class PianoScreenController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void nudgeProgressionBpm(int delta) {
-    _progressionPlayer.nudgeBpm(delta);
-    notifyListeners();
-  }
-
-  void toggleProgressionClick() {
-    _progressionPlayer.toggleClick();
-    notifyListeners();
-  }
-
   void finishProgressionEdit() {
     _progression.doneEditing();
     notifyListeners();
@@ -354,6 +352,23 @@ class PianoScreenController extends ChangeNotifier {
         noteRange: fullRange,
       );
     }
+  }
+
+  //*** Metronome ***
+
+  void toggleMetronome() {
+    _metronome.toggle();
+    notifyListeners();
+  }
+
+  void nudgeBpm(int delta) {
+    _metronome.nudgeBpm(delta);
+    notifyListeners();
+  }
+
+  void toggleMetronomeClick() {
+    _metronome.toggleClick();
+    notifyListeners();
   }
 
   void pressNote(NotePosition position) {
@@ -465,7 +480,7 @@ class PianoScreenController extends ChangeNotifier {
 
   @override
   void dispose() {
-    _progressionPlayer.dispose();
+    _metronome.dispose();
     _midiService.dispose();
     focusNode.dispose();
     super.dispose();

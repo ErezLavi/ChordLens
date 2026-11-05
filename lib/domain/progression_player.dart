@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:piano_app/common/metronome_service.dart';
 import 'package:piano_app/domain/chord_progression.dart';
 
@@ -13,78 +11,45 @@ class ProgressionPlayer {
     required MetronomeService metronome,
   }) : _metronome = metronome;
 
-  static const int minBpm = 40;
-  static const int maxBpm = 240;
-  static const int bpmStep = 4;
-  static const int defaultBpm = 96;
-
   final ChordProgression progression;
   final void Function() onStepChanged;
   final MetronomeService _metronome;
 
-  bool _isPlaying = false;
+  bool _awaitingDownbeat = false;
   bool _holdFirstBar = false;
-  bool _clickEnabled = true;
-  int _bpm = defaultBpm;
+  bool _startedClock = false;
 
-  bool get isPlaying => _isPlaying;
-  bool get clickEnabled => _clickEnabled;
-  int get bpm => _bpm;
+  bool get isPlaying => _metronome.isFollowedBy(_handleBeat);
+  bool get isAwaitingDownbeat => isPlaying && _awaitingDownbeat;
   bool get canPlay => progression.length > 1;
 
   void play() {
-    if (_isPlaying || !canPlay) return;
-    _isPlaying = true;
+    if (isPlaying || !canPlay) return;
+    _awaitingDownbeat = true;
     // The clock opens on a downbeat: a step already selected plays its full
     // first bar, otherwise that downbeat selects the first step.
     _holdFirstBar = progression.selectedIndex != null;
+    _startedClock = !_metronome.isRunning;
     progression.doneEditing();
-    unawaited(
-      _metronome.start(
-        bpm: _bpm,
-        clickAudible: _clickEnabled,
-        onBeat: _handleBeat,
-      ),
-    );
+    _metronome.follow(_handleBeat);
   }
 
   void pause() {
-    if (!_isPlaying) return;
-    _isPlaying = false;
-    unawaited(_metronome.stop());
+    if (!isPlaying) return;
+    _metronome.unfollow(_handleBeat);
+    if (_startedClock) _metronome.stop();
   }
 
-  void toggle() => _isPlaying ? pause() : play();
-
-  void setBpm(int value) {
-    final next = value.clamp(minBpm, maxBpm);
-    if (next == _bpm) return;
-    _bpm = next;
-    unawaited(_metronome.setBpm(next));
-  }
-
-  void nudgeBpm(int delta) => setBpm(_bpm + delta);
-
-  void setClickEnabled(bool value) {
-    if (_clickEnabled == value) return;
-    _clickEnabled = value;
-    unawaited(_metronome.setClickAudible(value));
-  }
-
-  void toggleClick() => setClickEnabled(!_clickEnabled);
+  void toggle() => isPlaying ? pause() : play();
 
   void _handleBeat(int beatInBar) {
     if (beatInBar != 0) return;
+    _awaitingDownbeat = false;
     if (_holdFirstBar) {
       _holdFirstBar = false;
-      return;
+    } else {
+      progression.advance();
     }
-    progression.advance();
     onStepChanged();
-  }
-
-  Future<void> dispose() {
-    _isPlaying = false;
-    return _metronome.dispose();
   }
 }

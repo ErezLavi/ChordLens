@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:piano_app/common/app_sizes.dart';
 import 'package:piano_app/common/constants.dart';
-import 'package:piano_app/domain/progression_player.dart';
 import 'package:piano_app/menu/picker_row.dart';
 import 'package:piano_app/piano/piano_screen_controller.dart';
 
@@ -54,13 +53,10 @@ class ProgressionBar extends StatelessWidget {
           )
         : _Transport(
             isPlaying: player.isPlaying,
+            isAwaitingDownbeat: player.isAwaitingDownbeat,
             canPlay: player.canPlay,
-            clickEnabled: player.clickEnabled,
-            bpm: player.bpm,
             voiceLeadingEnabled: progression.voiceLeadingEnabled,
             onPlayPause: controller.toggleProgressionPlayback,
-            onClickToggled: controller.toggleProgressionClick,
-            onBpmNudged: controller.nudgeProgressionBpm,
             onVoiceLeadingChanged: controller.setProgressionVoiceLeading,
           );
 
@@ -146,29 +142,22 @@ class _EditingActions extends StatelessWidget {
   }
 }
 
-/// Play / pause, click mute and tempo for the looping playback, plus the
-/// voice-leading switch.
+/// Play / pause for the looping playback, plus the voice-leading switch.
 class _Transport extends StatelessWidget {
   const _Transport({
     required this.isPlaying,
+    required this.isAwaitingDownbeat,
     required this.canPlay,
-    required this.clickEnabled,
-    required this.bpm,
     required this.voiceLeadingEnabled,
     required this.onPlayPause,
-    required this.onClickToggled,
-    required this.onBpmNudged,
     required this.onVoiceLeadingChanged,
   });
 
   final bool isPlaying;
+  final bool isAwaitingDownbeat;
   final bool canPlay;
-  final bool clickEnabled;
-  final int bpm;
   final bool voiceLeadingEnabled;
   final VoidCallback onPlayPause;
-  final VoidCallback onClickToggled;
-  final ValueChanged<int> onBpmNudged;
   final ValueChanged<bool> onVoiceLeadingChanged;
 
   @override
@@ -178,95 +167,29 @@ class _Transport extends StatelessWidget {
       spacing: AppSizes.space8,
       children: [
         Tooltip(
-          message: isPlaying ? 'Pause' : 'Play progression',
+          message: isAwaitingDownbeat
+              ? 'Starting on the next bar'
+              : (isPlaying ? 'Stop progression' : 'Play progression'),
           child: IconButton.filled(
             onPressed: canPlay ? onPlayPause : null,
-            icon: Icon(isPlaying ? Icons.stop : Icons.play_arrow),
+            icon: Icon(
+              isAwaitingDownbeat
+                  ? Icons.hourglass_top
+                  : (isPlaying ? Icons.stop : Icons.play_arrow),
+            ),
             style: IconButton.styleFrom(
-              backgroundColor: Constants.chromeColor,
+              backgroundColor: isAwaitingDownbeat
+                  ? Constants.chromeColor.withValues(alpha: 0.5)
+                  : Constants.chromeColor,
               foregroundColor: Colors.white,
             ),
           ),
         ),
-        Tooltip(
-          message: clickEnabled ? 'Mute metronome' : 'Unmute metronome',
-          child: FilledButton.icon(
-            onPressed: onClickToggled,
-            icon: Icon(
-              clickEnabled ? Icons.timer_outlined : Icons.timer_off_outlined,
-              size: 18,
-            ),
-            label: const Text('Click'),
-            style: FilledButton.styleFrom(
-              shape: const StadiumBorder(),
-              backgroundColor: clickEnabled
-                  ? Constants.chromeColor
-                  : Colors.transparent,
-              foregroundColor: clickEnabled
-                  ? Colors.white
-                  : Constants.chromeColor,
-              side: clickEnabled
-                  ? null
-                  : BorderSide(
-                      color: Constants.chromeColor.withValues(alpha: 0.45),
-                    ),
-            ),
-          ),
-        ),
-        _BpmStepper(bpm: bpm, onNudged: onBpmNudged),
         _VoiceLeadingSwitch(
           value: voiceLeadingEnabled,
           onChanged: onVoiceLeadingChanged,
         ),
       ],
-    );
-  }
-}
-
-class _BpmStepper extends StatelessWidget {
-  const _BpmStepper({required this.bpm, required this.onNudged});
-
-  final int bpm;
-  final ValueChanged<int> onNudged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: '$bpm BPM',
-      child: Container(
-        decoration: ShapeDecoration(
-          shape: StadiumBorder(
-            side: BorderSide(
-              color: Constants.chromeColor.withValues(alpha: 0.45),
-            ),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              onPressed: () => onNudged(-ProgressionPlayer.bpmStep),
-              icon: const Icon(Icons.remove, size: 18),
-              visualDensity: VisualDensity.compact,
-              color: Constants.chromeColor,
-            ),
-            SizedBox(
-              width: 32,
-              child: Text(
-                '$bpm',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-            ),
-            IconButton(
-              onPressed: () => onNudged(ProgressionPlayer.bpmStep),
-              icon: const Icon(Icons.add, size: 18),
-              visualDensity: VisualDensity.compact,
-              color: Constants.chromeColor,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

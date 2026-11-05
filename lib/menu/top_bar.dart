@@ -4,6 +4,7 @@ import 'package:piano_app/common/app_sizes.dart';
 import 'package:piano_app/common/constants.dart';
 import 'package:piano_app/menu/adaptive_menu.dart';
 import 'package:piano_app/menu/chords/chords_grid.dart';
+import 'package:piano_app/menu/metronome_control.dart';
 import 'package:piano_app/menu/progressions/progressions_panel.dart';
 import 'package:piano_app/menu/scales/scales_grid.dart';
 import 'package:piano_app/piano/piano_screen_controller.dart';
@@ -115,6 +116,12 @@ class TopMenuBar extends StatelessWidget {
                     controller.togglePicker(MenuPicker.progressions),
               ),
             ],
+            MetronomeControl(
+              controller: controller,
+              isCompact: isCompact,
+              iconSize: iconSize,
+              iconPadding: iconPadding,
+            ),
             MenuAnchor(
               builder: (context, controller, _) {
                 return IconButton(

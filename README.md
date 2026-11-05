@@ -24,7 +24,8 @@ Website: **https://erezlavi.github.io/ChordLens/**
 - Chord detection with a chord name display
 - Grand staff view of currently pressed notes
 - Chord and scales highlighting from the top-right menu
-- Chord progressions with playback, metronome click, adjustable BPM and voice leading
+- Metronome in the top bar, usable anywhere in the app, with adjustable BPM, a visual beat and a mutable click
+- Chord progressions with playback in time with the metronome and voice leading
 - Hardware MIDI input support (auto-connects to the first available device) / Playing from the computer's keyboard
 - SoundFont playback via SF2 assets / uploaded custom SF2 files + mute mode
 
@@ -49,15 +50,24 @@ Website: **https://erezlavi.github.io/ChordLens/**
 - Computer keyboard mapping:
   - `Z S X D C V G B H N J M , L . ; /`
   - `[` and `]` to shift the keyboard octave
+  - `Space` to start / stop the metronome (or the progression, while Progressions is open)
 
 ## Chord Progressions
 
 Open **Progressions** from the top-right menu to build and play a sequence of chords.
 
 - Tap `+` to add a chord, tap a chord to select it, and tap it again (or long-press) to change or remove it
-- Press play to loop the progression, one chord per bar (needs at least 2 chords), with an optional metronome **Click**
-- Adjust the tempo with `-` / `+` (40–240 BPM)
+- Press play to loop the progression, one chord per bar (needs at least 2 chords). It follows the metronome: if the metronome is already running, the progression joins on the next bar
+- Set the tempo (40–240 BPM) and mute the click from the metronome in the top bar
 - Turn on **VL** (voice leading) for smooth transitions between chords
+
+## Metronome
+
+The metronome lives in the top bar and works on its own, with or without a progression.
+
+- Press play (or `Space`) to start it, and set the tempo with `-` / `+` (40–240 BPM)
+- While it runs, the beat dots show where you are in the bar and the speaker button mutes the click
+- On mobile it sits behind a single icon that pulses on the beat
 
 ## SoundFonts
 

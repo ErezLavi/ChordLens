@@ -152,7 +152,7 @@ class _PianoScreenState extends State<PianoScreen> {
                             ),
                             isCompact
                                 ? AppSizes.space12.sbWidth
-                                : AppSizes.space36.sbWidth,
+                                : AppSizes.space24.sbWidth,
                           ],
                           AdaptiveMenu(
                             isCompact: isCompact,
@@ -226,7 +226,7 @@ class _PianoScreenState extends State<PianoScreen> {
                           ),
                           isCompact
                               ? AppSizes.space12.sbWidth
-                              : AppSizes.space36.sbWidth,
+                              : AppSizes.space24.sbWidth,
                           TopMenuBar(
                             controller: _controller,
                             isCompact: isCompact,
