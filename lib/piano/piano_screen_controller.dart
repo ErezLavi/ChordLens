@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:piano_app/domain/music_notation.dart';
@@ -75,6 +76,10 @@ class PianoScreenController extends ChangeNotifier {
     MenuPicker.scales => _selectedScale.notes,
     null => const [],
   };
+
+  bool get showsOctaveControls =>
+      activePickerNotes.isNotEmpty || 
+      (defaultTargetPlatform != TargetPlatform.android && connectedDeviceNames.isEmpty);
 
   // Connected devices
   List<String> get connectedDeviceNames => _midiService.connectedDeviceNames;

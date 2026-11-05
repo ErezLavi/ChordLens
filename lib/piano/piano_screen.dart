@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:piano_app/common/app_sizes.dart';
 import 'package:piano_app/custom_piano/custom_interactive_piano.dart';
 import 'package:piano_app/piano/piano_screen_controller.dart';
@@ -24,9 +23,6 @@ class PianoScreen extends StatefulWidget {
 
 class _PianoScreenState extends State<PianoScreen> {
   late final PianoScreenController _controller;
-  bool get _showOctaveControls =>
-      defaultTargetPlatform != TargetPlatform.android ||
-      _controller.connectedDeviceNames.isNotEmpty;
 
   @override
   void initState() {
@@ -147,7 +143,7 @@ class _PianoScreenState extends State<PianoScreen> {
                       return Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (_showOctaveControls) ...[
+                          if (_controller.showsOctaveControls) ...[
                             OctaveButtonsWidget(
                               isCompact: isCompact,
                               keyboardOctave: _controller.keyboardOctave,
