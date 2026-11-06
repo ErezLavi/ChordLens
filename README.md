@@ -37,9 +37,9 @@ Website: **https://erezlavi.github.io/ChordLens/**
 | --- | --- |
 | ![Chords](assets/showcase/chords.png) | ![Scales](assets/showcase/scales.png) |
 
-| Progressions |
-| --- |
-| ![Progressions](assets/showcase/progressions.png) |
+| Progressions | Editing a chord |
+| --- | --- |
+| ![Progressions](assets/showcase/progressions.png) | ![Editing a chord](assets/showcase/progressions_edit.png) |
 
 | Mobile | Menu |
 | --- | --- |
