@@ -19,7 +19,7 @@ class AppSizes {
   static const double radiusM = 12;
   static const double radiusL = 24;
 
-  static const double compactBreakpointWidth = 840;
+  static const double compactBreakpointWidth = 700;
   static const double compactBreakpointHeight = 500;
 
   static bool isCompactLayout(BoxConstraints constraints) {
