@@ -19,6 +19,8 @@ class AppSizes {
   static const double radiusM = 12;
   static const double radiusL = 24;
 
+  static const double topBarHeight = 48;
+
   static const double compactBreakpointWidth = 700;
   static const double compactBreakpointHeight = 500;
 

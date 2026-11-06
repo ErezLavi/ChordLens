@@ -64,9 +64,18 @@ class _PianoScreenState extends State<PianoScreen> {
                     ),
                     child: Row(
                       children: [
-                        GrandStaffViewerWidget(
-                          pressedNotes: _controller.pressedNotes,
-                          keySignature: _controller.selectedKeySignature,
+                        Padding(
+                          padding: EdgeInsets.only(
+                            top: isCompact
+                                ? 0
+                                : MediaQuery.paddingOf(context).top +
+                                      verticalPadding +
+                                      AppSizes.topBarHeight,
+                          ),
+                          child: GrandStaffViewerWidget(
+                            pressedNotes: _controller.pressedNotes,
+                            keySignature: _controller.selectedKeySignature,
+                          ),
                         ),
                         Expanded(
                           child: ChordViewer(
