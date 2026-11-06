@@ -1,19 +1,23 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:piano_app/domain/music_notation.dart';
 import 'package:piano_app/common/audio_service.dart';
-import 'package:piano_app/common/chord_detector.dart';
+import 'package:piano_app/common/logic/chord_detector.dart';
 import 'package:piano_app/common/constants.dart';
+import 'package:piano_app/common/metronome_service.dart';
 import 'package:piano_app/common/midi_service.dart';
 import 'package:piano_app/common/piano_utils.dart';
 import 'package:piano_app/domain/key_signature_reference.dart';
 import 'package:piano_app/domain/sound_font_option.dart';
+import 'package:piano_app/domain/chord_progression.dart';
+import 'package:piano_app/domain/progression_player.dart';
 import 'package:piano_app/domain/selected_chord.dart';
 import 'package:piano_app/domain/selected_scale.dart';
 
 /// Which picker the top bar has toggled on. On wide layouts the matching row
-/// sits permanently above the keyboard; `null` means neither is open.
-enum MenuPicker { chords, scales }
+/// sits permanently above the keyboard; `null` means none is open.
+enum MenuPicker { chords, scales, progressions }
 
 class PianoScreenController extends ChangeNotifier {
   PianoScreenController();
@@ -42,6 +46,15 @@ class PianoScreenController extends ChangeNotifier {
   String currentChord = '';
   final SelectedChord _selectedChord = SelectedChord();
   final SelectedScale _selectedScale = SelectedScale();
+  final ChordProgression _progression = ChordProgression();
+  late final MetronomeService _metronome = MetronomeService(
+    audio: _audioService,
+  );
+  late final ProgressionPlayer _progressionPlayer = ProgressionPlayer(
+    progression: _progression,
+    onStepChanged: _applyProgressionSelection,
+    metronome: _metronome,
+  );
   MenuPicker? _activePicker;
 
   // Getters
@@ -53,18 +66,25 @@ class PianoScreenController extends ChangeNotifier {
   SoundFontOption get selectedSoundFont => _soundFont;
   SelectedChord get selectedChord => _selectedChord;
   SelectedScale get selectedScale => _selectedScale;
+  ChordProgression get progression => _progression;
+  ProgressionPlayer get progressionPlayer => _progressionPlayer;
+  MetronomeService get metronome => _metronome;
   MenuPicker? get activePicker => _activePicker;
   KeySignatureReference get selectedKeySignature => _selectedKeySignature;
   List<KeySignatureReference> get keySignatureReferences =>
       Constants.keySignatureReferences;
   List<SoundFontOption> get availableSoundFonts =>
       List.unmodifiable(_availableSoundFonts);
-  List<NotePosition> get combinedHighlightedNotes {
-    final combined = <NotePosition>{};
-    combined.addAll(_selectedChord.notes);
-    combined.addAll(_selectedScale.notes);
-    return combined.toList();
-  }
+  List<NotePosition> get activePickerNotes => switch (_activePicker) {
+    MenuPicker.chords || MenuPicker.progressions => _selectedChord.notes,
+    MenuPicker.scales => _selectedScale.notes,
+    null => const [],
+  };
+
+  bool get showsOctaveControls =>
+      activePickerNotes.isNotEmpty ||
+      (defaultTargetPlatform != TargetPlatform.android &&
+          connectedDeviceNames.isEmpty);
 
   // Connected devices
   List<String> get connectedDeviceNames => _midiService.connectedDeviceNames;
@@ -115,15 +135,20 @@ class PianoScreenController extends ChangeNotifier {
     return (chord.substring(0, rootLen), chord.substring(rootLen));
   }
 
-  void handleKeyboardKey(KeyEvent event) {
+  KeyEventResult handleKeyboardKey(KeyEvent event) {
     var updated = false;
     if (event is KeyDownEvent) {
-      if (event.logicalKey == LogicalKeyboardKey.bracketLeft) {
+      if (_handleProgressionKey(event.logicalKey)) {
+        return KeyEventResult.handled;
+      } else if (event.logicalKey == LogicalKeyboardKey.space) {
+        toggleMetronome();
+        return KeyEventResult.handled;
+      } else if (event.logicalKey == LogicalKeyboardKey.bracketLeft) {
         decrementOctave();
-        return;
+        return KeyEventResult.handled;
       } else if (event.logicalKey == LogicalKeyboardKey.bracketRight) {
         incrementOctave();
-        return;
+        return KeyEventResult.handled;
       } else {
         final offset = Constants.keyboardKeyOffsets[event.logicalKey];
         if (offset != null && !_activeKeyNotes.containsKey(event.logicalKey)) {
@@ -156,14 +181,35 @@ class PianoScreenController extends ChangeNotifier {
       _updateChord();
       notifyListeners();
     }
+    return KeyEventResult.ignored;
+  }
+
+  bool _handleProgressionKey(LogicalKeyboardKey key) {
+    if (_activePicker != MenuPicker.progressions) return false;
+    if (key == LogicalKeyboardKey.arrowRight) {
+      moveProgressionSelection(1);
+    } else if (key == LogicalKeyboardKey.arrowLeft) {
+      moveProgressionSelection(-1);
+    } else if (key == LogicalKeyboardKey.space) {
+      toggleProgressionPlayback();
+    } else {
+      return false;
+    }
+    return true;
   }
 
   void togglePicker(MenuPicker picker) {
     _activePicker = _activePicker == picker ? null : picker;
+    if (_activePicker != MenuPicker.progressions) {
+      _progressionPlayer.pause();
+      _progression.doneEditing();
+    }
     notifyListeners();
   }
 
   void onChordSelected(int rootPc, String chordType, int inversion) {
+    _activePicker = MenuPicker.chords;
+    _progression.clearSelection();
     _selectedChord.rootPc = rootPc;
     _selectedChord.type = chordType;
     _selectedChord.inversion = inversion;
@@ -183,6 +229,7 @@ class PianoScreenController extends ChangeNotifier {
   }
 
   void onScaleSelected(int rootPc, String scaleType) {
+    _activePicker = MenuPicker.scales;
     _selectedScale.rootPc = rootPc;
     _selectedScale.type = scaleType;
     _selectedScale.notes = _pianoTheory.buildScaleNotesForOctave(
@@ -199,8 +246,96 @@ class PianoScreenController extends ChangeNotifier {
     notifyListeners();
   }
 
+  //*** Chord progression ***
+
+  void tapProgressionStep(int index) {
+    _progressionPlayer.pause();
+    if (_progression.isEditing || _progression.selectedIndex == index) {
+      _progression.beginEdit(index);
+    } else {
+      _progression.select(index);
+    }
+    _applyProgressionSelection();
+  }
+
+  void editProgressionStep(int index) {
+    _progressionPlayer.pause();
+    _progression.beginEdit(index);
+    _applyProgressionSelection();
+  }
+
+  void moveProgressionSelection(int delta) {
+    _progressionPlayer.pause();
+    _progression.move(delta);
+    _applyProgressionSelection();
+  }
+
+  void addProgressionStep() {
+    _progressionPlayer.pause();
+    _progression.addStep();
+    _applyProgressionSelection();
+  }
+
+  void updateProgressionStep(int rootPc, String chordType, int inversion) {
+    _progression.updateEditing(
+      rootPc: rootPc,
+      type: chordType,
+      inversion: inversion,
+    );
+    _applyProgressionSelection();
+  }
+
+  void removeProgressionStep() {
+    _progression.removeEditing();
+    if (!_progressionPlayer.canPlay) _progressionPlayer.pause();
+    _applyProgressionSelection();
+  }
+
+  void toggleProgressionPlayback() {
+    _progressionPlayer.toggle();
+    notifyListeners();
+  }
+
+  void finishProgressionEdit() {
+    _progression.doneEditing();
+    notifyListeners();
+  }
+
+  void setProgressionVoiceLeading(bool value) {
+    _progression.voiceLeadingEnabled = value;
+    _applyProgressionSelection();
+  }
+
+  void _applyProgressionSelection() {
+    _activePicker = MenuPicker.progressions;
+    final step = _progression.selectedStep;
+    if (step == null) {
+      _selectedChord.reset();
+      notifyListeners();
+      return;
+    }
+
+    final voicing = _progression.voiceLedVoicingAt(_progression.selectedIndex!);
+    _selectedChord
+      ..rootPc = step.rootPc
+      ..type = step.type
+      ..inversion = step.inversion
+      ..notes = voicing != null
+          ? _pianoTheory.notesOf(voicing)
+          : _pianoTheory.buildChordNotesForOctave(
+              rootPc: step.rootPc,
+              chordType: step.type,
+              octave: _keyboardOctave,
+              inversion: step.inversion,
+              noteRange: fullRange,
+            );
+    notifyListeners();
+  }
+
   void _rebuildSelectedHighlights() {
-    if (_selectedChord.rootPc != null) {
+    if (_progression.selectedStep != null) {
+      _applyProgressionSelection();
+    } else if (_selectedChord.rootPc != null) {
       _selectedChord.notes = _pianoTheory.buildChordNotesForOctave(
         rootPc: _selectedChord.rootPc!,
         chordType: _selectedChord.type,
@@ -217,6 +352,23 @@ class PianoScreenController extends ChangeNotifier {
         noteRange: fullRange,
       );
     }
+  }
+
+  //*** Metronome ***
+
+  void toggleMetronome() {
+    _metronome.toggle();
+    notifyListeners();
+  }
+
+  void nudgeBpm(int delta) {
+    _metronome.nudgeBpm(delta);
+    notifyListeners();
+  }
+
+  void toggleMetronomeClick() {
+    _metronome.toggleClick();
+    notifyListeners();
   }
 
   void pressNote(NotePosition position) {
@@ -328,6 +480,7 @@ class PianoScreenController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _metronome.dispose();
     _midiService.dispose();
     focusNode.dispose();
     super.dispose();

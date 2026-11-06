@@ -15,8 +15,9 @@ class ChordPickerBar extends StatelessWidget {
     required this.maxInversion,
     required this.onRootSelected,
     required this.onTypeSelected,
-    required this.onInversionSelected,
-    required this.onCleared,
+    this.onInversionSelected,
+    this.onCleared,
+    this.rootLabel = 'ROOT',
   });
 
   /// Note name per pitch class, indexed by pitch class.
@@ -31,11 +32,15 @@ class ChordPickerBar extends StatelessWidget {
   final int maxInversion;
   final ValueChanged<int> onRootSelected;
   final ValueChanged<String> onTypeSelected;
-  final ValueChanged<int> onInversionSelected;
-  final VoidCallback onCleared;
+
+  final ValueChanged<int>? onInversionSelected;
+  final VoidCallback? onCleared;
+  final String rootLabel;
 
   @override
   Widget build(BuildContext context) {
+    final labelWidth = rootLabel.length > 'QUALITY'.length ? 150.0 : 72.0;
+
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSizes.space16,
@@ -45,7 +50,8 @@ class ChordPickerBar extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           PickerRowLine(
-            label: 'ROOT',
+            label: rootLabel,
+            labelWidth: labelWidth,
             chips: List.generate(
               rootNames.length,
               (index) => PickerChip(
@@ -54,20 +60,23 @@ class ChordPickerBar extends StatelessWidget {
                 onTap: () => onRootSelected(index),
               ),
             ),
-            trailing: PickerStepper(
-              label: 'INV',
-              value: inversion == 0 ? 'Root' : '$inversion',
-              onDecrement: inversion > 0
-                  ? () => onInversionSelected(inversion - 1)
-                  : null,
-              onIncrement: inversion < maxInversion
-                  ? () => onInversionSelected(inversion + 1)
-                  : null,
-            ),
+            trailing: onInversionSelected == null
+                ? null
+                : PickerStepper(
+                    label: 'INV',
+                    value: inversion == 0 ? 'Root' : '$inversion',
+                    onDecrement: inversion > 0
+                        ? () => onInversionSelected!(inversion - 1)
+                        : null,
+                    onIncrement: inversion < maxInversion
+                        ? () => onInversionSelected!(inversion + 1)
+                        : null,
+                  ),
           ),
           AppSizes.space4.sbHeight,
           PickerRowLine(
             label: 'QUALITY',
+            labelWidth: labelWidth,
             chips: types
                 .map(
                   (type) => PickerChip(
@@ -77,7 +86,9 @@ class ChordPickerBar extends StatelessWidget {
                   ),
                 )
                 .toList(),
-            trailing: PickerClearButton(onPressed: onCleared),
+            trailing: onCleared == null
+                ? null
+                : PickerClearButton(onPressed: onCleared!),
           ),
         ],
       ),

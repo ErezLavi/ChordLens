@@ -13,14 +13,5 @@ class MainFlutterWindow: NSWindow {
     super.awakeFromNib()
   }
 
-  // Stop macOS system beep but still forward keys to Flutter
-  override func performKeyEquivalent(with event: NSEvent) -> Bool {
-    // Tell macOS “this key was handled”
-    return true
-  }
-
-  override func sendEvent(_ event: NSEvent) {
-    // Forward ALL keyboard events to Flutter
-    super.sendEvent(event)
-  }
+  override func noResponder(for eventSelector: Selector) {}
 }

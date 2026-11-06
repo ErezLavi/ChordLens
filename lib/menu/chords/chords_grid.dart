@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:piano_app/common/app_sizes.dart';
 import 'package:piano_app/common/constants.dart';
 import 'package:piano_app/domain/key_signature_reference.dart';
-import 'package:piano_app/menu/chord_picker_bar.dart';
+import 'package:piano_app/menu/chords/chord_picker_bar.dart';
+import 'package:piano_app/common/logic/music_db.dart';
 
 typedef OnChordSelected =
     void Function(int rootPc, String chordType, int inversion);
@@ -21,6 +22,10 @@ class ChordsGrid extends StatefulWidget {
   /// lays it out as the two scrolling rows that sit above the keyboard.
   final bool isCompact;
 
+  final String? chordLabel;
+  final bool showInversion;
+  final bool showClear;
+
   const ChordsGrid({
     super.key,
     this.onChordSelected,
@@ -31,6 +36,9 @@ class ChordsGrid extends StatefulWidget {
     this.keySignature,
     this.useFlats = false,
     this.isCompact = true,
+    this.chordLabel,
+    this.showInversion = true,
+    this.showClear = true,
   });
 
   @override
@@ -75,8 +83,8 @@ class _ChordsGridState extends State<ChordsGrid> {
           ),
         )
         .toList();
-    final chordTypes = Constants.chordDB.keys
-        .where((type) => (Constants.chordRank[type] ?? 999) <= 27)
+    final chordTypes = MusicDb.chordDB.keys
+        .where((type) => (MusicDb.chordRank[type] ?? 999) <= 27)
         .toList();
     final maxInversion = _maxInversion();
 
@@ -93,8 +101,11 @@ class _ChordsGridState extends State<ChordsGrid> {
         maxInversion: maxInversion,
         onRootSelected: _selectRoot,
         onTypeSelected: _selectType,
-        onInversionSelected: _selectInversion,
-        onCleared: _clearSelection,
+        onInversionSelected: widget.showInversion ? _selectInversion : null,
+        onCleared: widget.showClear ? _clearSelection : null,
+        rootLabel: widget.chordLabel == null
+            ? 'ROOT'
+            : '${widget.chordLabel} · ROOT',
       );
     }
 
@@ -107,15 +118,21 @@ class _ChordsGridState extends State<ChordsGrid> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: _clearSelection,
-                icon: const Icon(Icons.clear),
-                label: const Text('Clear'),
+            if (widget.showClear)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: _clearSelection,
+                  icon: const Icon(Icons.clear),
+                  label: const Text('Clear'),
+                ),
               ),
+            Text(
+              widget.chordLabel == null
+                  ? 'Root'
+                  : '${widget.chordLabel} · Root',
+              style: titleStyle,
             ),
-            Text('Root', style: titleStyle),
             AppSizes.space8.sbHeight,
             Wrap(
               spacing: 6,
@@ -147,22 +164,24 @@ class _ChordsGridState extends State<ChordsGrid> {
                   )
                   .toList(),
             ),
-            AppSizes.space12.sbHeight,
-            Text('Inversion', style: titleStyle),
-            AppSizes.space8.sbHeight,
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: List.generate(
-                maxInversion + 1,
-                (index) => ChoiceChip(
-                  label: Text(index == 0 ? 'Root' : '$index'),
-                  selected: _inversion == index,
-                  showCheckmark: false,
-                  onSelected: (_) => _selectInversion(index),
+            if (widget.showInversion) ...[
+              AppSizes.space12.sbHeight,
+              Text('Inversion', style: titleStyle),
+              AppSizes.space8.sbHeight,
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: List.generate(
+                  maxInversion + 1,
+                  (index) => ChoiceChip(
+                    label: Text(index == 0 ? 'Root' : '$index'),
+                    selected: _inversion == index,
+                    showCheckmark: false,
+                    onSelected: (_) => _selectInversion(index),
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ),
@@ -201,7 +220,7 @@ class _ChordsGridState extends State<ChordsGrid> {
   }
 
   int _maxInversion() {
-    final maxFromType = Constants.maxChordInversion(_chordType);
+    final maxFromType = MusicDb.maxChordInversion(_chordType);
     return maxFromType.clamp(0, 3).toInt();
   }
 

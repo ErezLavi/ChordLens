@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:piano_app/common/app_sizes.dart';
+import 'package:piano_app/common/constants.dart';
 
 /// A single labelled line of the persistent picker: a caption, a horizontally
 /// scrolling strip of [chips], and an optional [trailing] control pinned to the
@@ -12,11 +13,13 @@ class PickerRowLine extends StatelessWidget {
     required this.label,
     required this.chips,
     this.trailing,
+    this.labelWidth = 72,
   });
 
   final String label;
   final List<Widget> chips;
   final Widget? trailing;
+  final double labelWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +27,7 @@ class PickerRowLine extends StatelessWidget {
     return Row(
       children: [
         SizedBox(
-          width: 72,
+          width: labelWidth,
           child: Text(
             label,
             style: theme.textTheme.labelSmall?.copyWith(
@@ -52,35 +55,43 @@ class PickerRowLine extends StatelessWidget {
   }
 }
 
-/// Pill-shaped selectable chip used by the picker rows. The selected chip is
-/// filled with the primary color.
+/// Pill-shaped selectable chip used by the picker rows.
 class PickerChip extends StatelessWidget {
   const PickerChip({
     super.key,
     required this.label,
     required this.selected,
     required this.onTap,
+    this.onLongPress,
+    this.outlined = false,
+    this.ringed = false,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+  final bool outlined;
+  final bool ringed;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    return Material(
-      color: selected ? colors.primary : colors.surface,
+    final chip = Material(
+      color: selected
+          ? Constants.chromeColor
+          : (outlined ? Colors.white : Colors.transparent),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSizes.radiusL),
         side: BorderSide(
-          color: selected ? colors.primary : colors.outlineVariant,
+          color: selected
+              ? Constants.chromeColor
+              : (outlined ? Colors.black26 : Colors.transparent),
         ),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         child: Container(
           constraints: const BoxConstraints(minWidth: 44),
           padding: const EdgeInsets.symmetric(
@@ -90,12 +101,25 @@ class PickerChip extends StatelessWidget {
           alignment: Alignment.center,
           child: Text(
             label,
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: selected ? colors.onPrimary : colors.onSurface,
+            style: TextStyle(
+              color: selected ? Colors.white : Colors.black,
             ),
           ),
         ),
       ),
+    );
+
+    if (!ringed) return chip;
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.space4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppSizes.radiusL + AppSizes.space4),
+        border: Border.all(
+          color: Constants.chromeColor.withValues(alpha: 0.35),
+          width: 2,
+        ),
+      ),
+      child: chip,
     );
   }
 }

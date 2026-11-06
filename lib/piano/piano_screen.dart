@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:piano_app/common/app_sizes.dart';
 import 'package:piano_app/custom_piano/custom_interactive_piano.dart';
 import 'package:piano_app/piano/piano_screen_controller.dart';
@@ -7,9 +6,10 @@ import 'package:piano_app/piano/widgets/grand_stuff_viewer_widget.dart';
 import 'package:piano_app/piano/widgets/chord_viewer.dart';
 import 'package:piano_app/piano/widgets/octave_buttons_widget.dart';
 import 'package:piano_app/menu/adaptive_menu.dart';
-import 'package:piano_app/menu/chords_grid.dart';
+import 'package:piano_app/menu/chords/chords_grid.dart';
 import 'package:piano_app/menu/key_signature_grid.dart';
-import 'package:piano_app/menu/scales_grid.dart';
+import 'package:piano_app/menu/progressions/progressions_panel.dart';
+import 'package:piano_app/menu/scales/scales_grid.dart';
 import 'package:piano_app/menu/top_bar.dart';
 
 class PianoScreen extends StatefulWidget {
@@ -23,9 +23,6 @@ class PianoScreen extends StatefulWidget {
 
 class _PianoScreenState extends State<PianoScreen> {
   late final PianoScreenController _controller;
-  bool get _showOctaveControls =>
-      defaultTargetPlatform != TargetPlatform.android ||
-      _controller.connectedDeviceNames.isNotEmpty;
 
   @override
   void initState() {
@@ -67,9 +64,18 @@ class _PianoScreenState extends State<PianoScreen> {
                     ),
                     child: Row(
                       children: [
-                        GrandStaffViewerWidget(
-                          pressedNotes: _controller.pressedNotes,
-                          keySignature: _controller.selectedKeySignature,
+                        Padding(
+                          padding: EdgeInsets.only(
+                            top: isCompact
+                                ? 0
+                                : MediaQuery.paddingOf(context).top +
+                                      verticalPadding +
+                                      AppSizes.topBarHeight,
+                          ),
+                          child: GrandStaffViewerWidget(
+                            pressedNotes: _controller.pressedNotes,
+                            keySignature: _controller.selectedKeySignature,
+                          ),
                         ),
                         Expanded(
                           child: ChordViewer(
@@ -104,18 +110,22 @@ class _PianoScreenState extends State<PianoScreen> {
                         keySignature: _controller.selectedKeySignature,
                         useFlats: _controller.useFlats,
                       ),
+                      MenuPicker.progressions => ProgressionsPanel(
+                        controller: _controller,
+                        isCompact: false,
+                      ),
                     },
                   ),
                 Expanded(
                   flex: 1,
-                  child: KeyboardListener(
+                  child: Focus(
                     focusNode: _controller.focusNode,
                     autofocus: true,
-                    onKeyEvent: _controller.handleKeyboardKey,
+                    onKeyEvent: (_, event) =>
+                        _controller.handleKeyboardKey(event),
                     child: CustomInteractivePiano(
                       highlightedNotes: _controller.pressedNotes,
-                      chordHighlightedNotes:
-                          _controller.combinedHighlightedNotes,
+                      chordHighlightedNotes: _controller.activePickerNotes,
                       naturalColor: Colors.white,
                       accidentalColor: Colors.black,
                       keyWidth: keyWidth,
@@ -142,7 +152,7 @@ class _PianoScreenState extends State<PianoScreen> {
                       return Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (_showOctaveControls) ...[
+                          if (_controller.showsOctaveControls) ...[
                             OctaveButtonsWidget(
                               isCompact: isCompact,
                               keyboardOctave: _controller.keyboardOctave,
@@ -151,7 +161,7 @@ class _PianoScreenState extends State<PianoScreen> {
                             ),
                             isCompact
                                 ? AppSizes.space12.sbWidth
-                                : AppSizes.space36.sbWidth,
+                                : AppSizes.space24.sbWidth,
                           ],
                           AdaptiveMenu(
                             isCompact: isCompact,
@@ -225,7 +235,7 @@ class _PianoScreenState extends State<PianoScreen> {
                           ),
                           isCompact
                               ? AppSizes.space12.sbWidth
-                              : AppSizes.space36.sbWidth,
+                              : AppSizes.space24.sbWidth,
                           TopMenuBar(
                             controller: _controller,
                             isCompact: isCompact,
